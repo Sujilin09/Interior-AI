@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DesignAI - Transform Your Space</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+        /* CSS Reset and Basic Setup */
+        :root {
+            --primary-green: #10B981;
+            --dark-text: #111827;
+            --medium-text: #374151;
+            --light-text: #6B7280;
+            --background-light: #F9FAFB;
+            --border-color: #E5E7EB;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--dark-text);
+            background-color: #FFFFFF;
+            line-height: 1.6;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Utility Classes */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        section {
+            padding: 80px 0;
+        }
+
+        h1, h2, h3 {
+            font-weight: 700;
+            color: var(--dark-text);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-size: 2.25rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            color: var(--light-text);
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.125rem;
+            max-width: 600px;
+            margin: 0 auto 50px auto;
+        }
+
+        /* Header and Navigation */
+        .main-header {
+            padding: 20px 0;
+            background-color: #fff;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .main-header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo i {
+            color: var(--primary-green);
+            margin-right: 8px;
+        }
+
+        .main-nav ul {
+            list-style: none;
+            display: flex;
+            gap: 30px;
+        }
+
+        .main-nav a {
+            text-decoration: none;
+            color: var(--medium-text);
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .main-nav a:hover {
+            color: var(--primary-green);
+        }
+
+        .auth-buttons {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .auth-buttons .signup-link {
+            color: var(--light-text);
+            text-decoration: none;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline {
+            border: 1px solid var(--border-color);
+            color: var(--medium-text);
+        }
+        .btn-outline:hover {
+            background-color: var(--background-light);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-green);
+            color: #fff;
+            border: 1px solid var(--primary-green);
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        /* Hero Section */
+        #hero {
+            padding: 60px 0;
+        }
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: center;
+        }
+
+        .hero-text h1 span {
+            color: var(--primary-green);
+        }
+
+        .hero-text p {
+            font-size: 1.125rem;
+            margin: 20px 0 30px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .action-box {
+            flex: 1;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+            color: var(--dark-text);
+            transition: all 0.3s ease;
+        }
+        .action-box:hover {
+            border-color: var(--primary-green);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .action-box i {
+            font-size: 1.5rem;
+            color: var(--primary-green);
+        }
+        .action-box span {
+            font-weight: 600;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 30px;
+        }
+        .hero-stats div {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--light-text);
+        }
+        .hero-stats i {
+            color: var(--primary-green);
+        }
+
+        /* Hero Section - Image Positioning Correction (Flexbox Method) */
+       /* Hero Section */
+        #hero {
+            padding: 60px 0;
+            position: relative; /* Crucial for positioning the background */
+            overflow: hidden; /* Prevents background from spilling out */
+        }
+
+        /* NEW: Styles for the faint background shape */
+        /* NEW: Styles for the full-bleed, transparent background image */
+        .hero-background-shape {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* This is the key: it covers the area without stretching */
+            z-index: -1;      /* This places it BEHIND all other content */
+            opacity: 0.08;    /* Make it very transparent. Adjust as needed. */
+            pointer-events: none;
+        }
+        
+        .hero-content {
+           /* This ensures the content is on top of the background shape */
+           position: relative;
+           z-index: 1;
+        }
+
+        /* Simplified CSS for the overlapping images */
+        .hero-images {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 0;
+        }
+
+        .img-before {
+            width: 60%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            z-index: 1;
+            margin-top: 50px;
+        }
+
+        .img-after {
+            width: 60%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            z-index: 2;
+            margin-left: 2%; /* Controls the overlap */
+            margin-bottom: 50px;
+        }
+        
+        .hero-images:hover .img-before {
+            transform: translateX(-5px);
+        }
+        .hero-images:hover .img-after {
+            transform: translateX(5px);
+        }
+        /* "How It Works" & "Features" Section */
+        #how-it-works, #features {
+            background-color: var(--background-light);
+        }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.07);
+        }
+
+        .card .icon {
+            font-size: 2rem;
+            color: var(--primary-green);
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+        
+        #how-it-works .card {
+            text-align: left;
+            position: relative;
+        }
+        #how-it-works .step-number {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: var(--primary-green);
+            color: #fff;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        #how-it-works .card h3 {
+            margin-bottom: 10px;
+        }
+        #how-it-works .card .icon {
+            text-align: left;
+            display: block;
+        }
+
+        /* Testimonials Section */
+        .testimonial-card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+        .stars {
+            color: #FBBF24; /* A nice yellow for stars */
+            margin-bottom: 15px;
+        }
+        .testimonial-card blockquote {
+            font-size: 1.1rem;
+            color: var(--medium-text);
+            margin-bottom: 20px;
+            border-left: 3px solid var(--primary-green);
+            padding-left: 15px;
+            font-style: italic;
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-profile img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+        }
+        .user-profile .name {
+            font-weight: 600;
+            color: var(--dark-text);
+        }
+        .user-profile .role {
+            font-size: 0.9rem;
+            color: var(--light-text);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            border-top: 1px solid var(--border-color);
+            color: var(--light-text);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="container">
+            <a href="/" class="logo"> <i class="fa-solid fa-drafting-compass"></i>
+                DesignAI
+            </a>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="#hero">Home</a></li>
+                    <li><a href="#how-it-works">How It Works</a></li>
+                    <li><a href="#features">Features</a></li>
+                    </ul>
+            </nav>
+            <div class="auth-buttons">
+                <a href="/login/user" class="btn btn-outline">Login as Homeowner</a>     <a href="/login/designer" class="btn btn-primary">Login as Designer</a> <a href="/signup" class="signup-link">New here? Sign Up</a>         </div>
+        </div>
+    </header>
+
+    <main>
+<section id="hero">
+    <img src="{{ url_for('static', filename='images/background.png') }}" alt="Background Shape" class="hero-background-shape">
+    
+    <div class="container hero-content">
+        <div class="hero-text">
+            <h1>Transform Your Space with <span>AI-Powered Design</span></h1>
+            <p>Upload a room photo → Get instant AI redesigns → Connect with top designers</p>
+            <div class="hero-actions">
+                <a href="/signup" class="action-box">
+                    <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                    <div>
+                        <span>Upload Your Room Photo</span>
+                        <p style="font-size: 0.9rem; margin: 0;">For homeowners</p>
+                    </div>
+                </a>
+                <a href="/signup" class="action-box">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <div>
+                        <span>Join as Designer</span>
+                        <p style="font-size: 0.9rem; margin: 0;">For professionals</p>
+                    </div>
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div><i class="fa-solid fa-check-circle"></i> 10K+ rooms redesigned</div>
+                <div><i class="fa-solid fa-check-circle"></i> 500+ verified designers</div>
+            </div>
+        </div>
+        <div class="hero-images">
+            <img src="{{ url_for('static', filename='images/hero-before.jpg') }}" alt="Room before redesign" class="img-before">
+            <img src="{{ url_for('static', filename='images/hero-after.jpg') }}" alt="Room after AI redesign" class="img-after">
+        </div>
+    </div>
+</section>
+        
+        <section id="how-it-works">
+            <div class="container">
+                <h2>How It Works</h2>
+                <p class="section-subtitle">Transform your space in three simple steps with the power of AI and expert designers</p>
+                <div class="grid-container">
+                    <div class="card">
+                        <div class="step-number">1</div>
+                        <i class="icon fa-solid fa-cloud-upload-alt"></i>
+                        <h3>Upload Your Space</h3>
+                        <p>Take a photo of your room and upload it to our AI-powered platform.</p>
+                    </div>
+                    <div class="card">
+                        <div class="step-number">2</div>
+                        <i class="icon fa-solid fa-lightbulb"></i>
+                        <h3>Get AI Suggestions</h3>
+                        <p>Our AI analyzes your space and generates multiple design variations instantly.</p>
+                    </div>
+                    <div class="card">
+                        <div class="step-number">3</div>
+                        <i class="icon fa-solid fa-users"></i>
+                        <h3>Connect with Designers</h3>
+                        <p>Browse verified designers, view portfolios, and book consultations.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="features">
+            <div class="container">
+                <h2>Features That Make the Difference</h2>
+                <p class="section-subtitle">Powerful tools and expert connections to bring your design vision to life</p>
+                <div class="grid-container">
+                    <div class="card">
+                        <i class="icon fa-solid fa-code"></i>
+                        <h3>AI Room Analysis</h3>
+                        <p>Advanced AI technology analyzes your space, lighting, and style preferences to generate personalized design recommendations.</p>
+                    </div>
+                    <div class="card">
+                        <i class="icon fa-solid fa-handshake-angle"></i>
+                        <h3>Expert Designer Network</h3>
+                        <p>Connect with verified interior designers who specialize in your preferred style and budget range.</p>
+                    </div>
+                    <div class="card">
+                        <i class="icon fa-solid fa-dollar-sign"></i>
+                        <h3>Budget & Timeline Predictions</h3>
+                        <p>Get accurate cost estimates and project timelines before you commit to any design changes.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="testimonials">
+            <div class="container">
+                <h2>What Our Users Say</h2>
+                <p class="section-subtitle">Join thousands of satisfied homeowners and designers who trust DesignAI</p>
+                <div class="grid-container">
+                    <div class="testimonial-card">
+                        <div class="stars">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <blockquote>"DesignAI transformed my living room beyond my expectations. The AI suggestions were spot-on, and connecting with a designer was seamless."</blockquote>
+                        <div class="user-profile">
+                            <img src="https://randomuser.me/api/portraits/women/11.jpg" alt="Sarah Johnson">
+                            <div>
+                                <div class="name">Sarah Johnson</div>
+                                <div class="role">Homeowner</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <div class="stars">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <blockquote>"As a designer, this platform has helped me reach more clients and showcase my work effectively. The AI tools actually complement my creativity."</blockquote>
+                        <div class="user-profile">
+                            <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="Michael Chen">
+                            <div>
+                                <div class="name">Michael Chen</div>
+                                <div class="role">Interior Designer</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <div class="stars">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <blockquote>"I was skeptical about AI design, but the results were amazing. The budget predictions were accurate, and the whole process was so smooth."</blockquote>
+                        <div class="user-profile">
+                            <img src="https://randomuser.me/api/portraits/women/33.jpg" alt="Emily Rodriguez">
+                            <div>
+                                <div class="name">Emily Rodriguez</div>
+                                <div class="role">Homeowner</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 DesignAI. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
