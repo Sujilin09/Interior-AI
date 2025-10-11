@@ -6,80 +6,861 @@
     <title>Sign Up - DesignAI</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
-        body { font-family: 'Inter', sans-serif; background:#f9fafb; display:flex; justify-content:center; align-items:center; height:100vh; }
-        .signup-container { background:#fff; padding:30px; border-radius:12px; width:400px; box-shadow:0 4px 20px rgba(0,0,0,0.1);}
-        h2 { text-align:center; margin-bottom:20px; }
-        form div { margin-bottom:15px; }
-        label { display:block; margin-bottom:5px; font-weight:500; }
-        input[type="text"], input[type="email"], input[type="password"], select { width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; }
-        .radio-group { display:flex; gap:20px; }
-        .btn { width:100%; padding:12px; background:#10B981; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background:#f9fafb; 
+            display:flex; 
+            justify-content:center; 
+            align-items:center; 
+            min-height:100vh;
+            padding: 20px;
+        }
+        .signup-container { 
+            background:#fff; 
+            padding:30px; 
+            border-radius:12px; 
+            width:100%;
+            max-width:500px; 
+            box-shadow:0 4px 20px rgba(0,0,0,0.1);
+        }
+        h2 { 
+            text-align:center; 
+            margin-bottom:20px; 
+        }
+        
+        /* Progress Steps for Designer */
+        .progress-steps {
+            display: none; /* Hidden by default */
+            margin-bottom: 30px;
+        }
+        .progress-steps.active {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        .progress-line {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #e5e7eb;
+            z-index: 0;
+        }
+        .progress-fill {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            height: 2px;
+            background: #10B981;
+            transition: width 0.3s ease;
+            z-index: 1;
+        }
+        .step-indicator {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            flex: 1;
+        }
+        .step-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #e5e7eb;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-bottom: 5px;
+        }
+        .step-indicator.active .step-circle {
+            border-color: #10B981;
+            background: #10B981;
+            color: #fff;
+        }
+        .step-indicator.completed .step-circle {
+            border-color: #10B981;
+            background: #10B981;
+            color: #fff;
+        }
+        .step-label {
+            font-size: 0.7rem;
+            color: #6b7280;
+        }
+        .step-indicator.active .step-label {
+            color: #10B981;
+            font-weight: 600;
+        }
+        
+        /* Form Steps */
+        .form-step {
+            display: none;
+        }
+        .form-step.active {
+            display: block;
+        }
+        
+        form div { 
+            margin-bottom:15px; 
+        }
+        label { 
+            display:block; 
+            margin-bottom:5px; 
+            font-weight:500; 
+        }
+        input[type="text"], 
+        input[type="email"], 
+        input[type="password"], 
+        input[type="number"],
+        input[type="tel"],
+        textarea,
+        select { 
+            width:100%; 
+            padding:10px; 
+            border:1px solid #d1d5db; 
+            border-radius:8px; 
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        small {
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+        
+        .radio-group { 
+            display:flex; 
+            gap:20px; 
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .radio-group input[type="radio"] {
+            margin-right: 8px;
+        }
+        
+        /* Checkbox Grid */
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .checkbox-item:hover {
+            border-color: #10B981;
+            background: #f0fdf4;
+        }
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 8px;
+            width: auto;
+        }
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 400;
+        }
+        
+        /* Form Grid */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        /* Buttons */
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn { 
+            flex: 1;
+            padding:12px; 
+            border:none; 
+            border-radius:8px; 
+            font-weight:600; 
+            cursor:pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background:#10B981; 
+            color:#fff;
+        }
+        .btn-primary:hover {
+            background: #059669;
+        }
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        /* Hide designer fields initially */
+        .designer-only {
+            display: none;
+        }
+        
+        .required {
+            color: #ef4444;
+        }
+        
+        /* --- FLASH MESSAGE STYLE --- */
+        .flash-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+            transform: translateY(-20px);
+            min-width: 250px;
+        }
+        .flash-message.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .flash-message.success {
+            background: #10B981; /* Green */
+        }
+        .flash-message.error {
+            background: #EF4444; /* Red */
+        }
+        /* --------------------------- */
+
+        @media (max-width: 600px) {
+            .checkbox-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
 
+<!-- Flash Message Container -->
+<div id="flash-message" class="flash-message"></div>
+
 <div class="signup-container">
     <h2>Create Account</h2>
-    <form id="signup-form" method="POST" action="/signup">
-        <div>
-            <label for="role">I am a:</label>
-            <div class="radio-group">
-                <label><input type="radio" name="role" value="homeowner" required> Homeowner</label>
-                <label><input type="radio" name="role" value="designer" required> Designer</label>
+    
+    <!-- Progress Steps (only shown for designers) -->
+    <div class="progress-steps" id="progress-container">
+        <div class="progress-line"></div>
+        <div class="progress-fill" id="progress-fill"></div>
+        
+        <div class="step-indicator active" data-step="1">
+            <div class="step-circle">1</div>
+            <div class="step-label">Basic</div>
+        </div>
+        <div class="step-indicator" data-step="2">
+            <div class="step-circle">2</div>
+            <div class="step-label">Style</div>
+        </div>
+        <div class="step-indicator" data-step="3">
+            <div class="step-circle">3</div>
+            <div class="step-label">Pricing</div>
+        </div>
+        <div class="step-indicator" data-step="4">
+            <div class="step-circle">4</div>
+            <div class="step-label">Details</div>
+        </div>
+        <div class="step-indicator" data-step="5">
+            <div class="step-circle">5</div>
+            <div class="step-label">Portfolio</div>
+        </div>
+    </div>
+    
+    <form id="signup-form" method="POST" action="">
+        
+        <!-- STEP 1: Basic Info (Always visible first) -->
+        <div class="form-step active" data-step="1">
+            <div>
+                <label for="role">I am a:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="role" value="user" required> Homeowner</label>
+                    <label><input type="radio" name="role" value="designer" required> Designer</label>
+                </div>
+            </div>
+
+            <div>
+                <label for="name">Full Name: <span class="required">*</span></label>
+                <input type="text" name="name" id="name" required>
+            </div>
+
+            <div>
+                <label for="email">Email: <span class="required">*</span></label>
+                <input type="email" name="email" id="email" required>
+            </div>
+
+            <div>
+                <label for="password">Password: <span class="required">*</span></label>
+                <input type="password" name="password" id="password" required>
+            </div>
+
+            <!-- Designer Additional Fields (Step 1) -->
+            <div class="designer-only">
+            <div>
+                <label for="specialisation">Primary Specialisation: <span class="required">*</span></label>
+                <select name="specialisation" id="specialisation">
+                    <option value="">Select Primary Focus</option>
+                    <option value="Residential">Residential</option>
+                    <option value="Commercial">Commercial</option>
+                    <option value="Vastu">Vastu/Holistic</option>
+                    <option value="Renovation">Renovation</option>
+                    <option value="Modular">Modular Design</option>
+                </select>
+            </div>
+                <div>
+                    <label for="studio_name">Studio Name (Optional):</label>
+                    <input type="text" name="studio_name" id="studio_name">
+                </div>
+
+                <div>
+                    <label for="phone">Phone Number: <span class="required">*</span></label>
+                    <input type="tel" name="phone" id="phone">
+                </div>
+
+                <div class="form-grid">
+                    <div>
+                        <label for="location">Primary Location: <span class="required">*</span></label>
+                        <input type="text" name="location" id="location" placeholder="Bangalore">
+                    </div>
+                    <div>
+                        <label for="years_experience">Years of Experience: <span class="required">*</span></label>
+                        <input type="number" name="years_experience" id="years_experience" min="0">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="cities_served">Cities Served: <span class="required">*</span></label>
+                    <input type="text" name="cities_served" id="cities_served" placeholder="Bangalore, Chennai, Hyderabad">
+                    <small>Separate multiple cities with commas</small>
+                </div>
+
+                <div>
+                    <label for="certifications">Certifications / Licenses:</label>
+                    <input type="text" name="certifications" id="certifications" placeholder="e.g., NCIDQ, LEED AP">
+                </div>
+
+                <div>
+                    <label for="awards">Awards & Recognition:</label>
+                    <textarea name="awards" id="awards" placeholder="List any awards or recognition"></textarea>
+                </div>
+            </div>
+
+            <div class="form-buttons">
+                <button type="button" class="btn btn-primary" id="continue-btn" onclick="handleContinue()">Continue</button>
             </div>
         </div>
 
-        <div>
-            <label for="name">Full Name:</label>
-            <input type="text" name="name" required>
+        <!-- STEP 2: Design Preferences & Style (Designer Only) -->
+        <div class="form-step designer-only" data-step="2">
+            <h3 style="margin-bottom: 10px;">Design Preferences & Style</h3>
+            <p style="color: #6b7280; margin-bottom: 20px; font-size: 0.9rem;">What design styles do you specialize in?</p>
+
+            <div>
+                <label>Primary Design Styles: <span class="required">*</span></label>
+                <div class="checkbox-grid">
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="design_styles" value="Modern" id="style-modern">
+                        <label for="style-modern">Modern</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="design_styles" value="Minimalist" id="style-minimalist">
+                        <label for="style-minimalist">Minimalist</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="design_styles" value="Traditional" id="style-traditional">
+                        <label for="style-traditional">Traditional</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="design_styles" value="Contemporary" id="style-contemporary">
+                        <label for="style-contemporary">Contemporary</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="design_styles" value="Industrial" id="style-industrial">
+                        <label for="style-industrial">Industrial</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="design_styles" value="Scandinavian" id="style-scandinavian">
+                        <label for="style-scandinavian">Scandinavian</label>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label>Room Specializations: <span class="required">*</span></label>
+                <div class="checkbox-grid">
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="room_types" value="Kitchen" id="room-kitchen">
+                        <label for="room-kitchen">Kitchen</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="room_types" value="Bedroom" id="room-bedroom">
+                        <label for="room-bedroom">Bedroom</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="room_types" value="Living Room" id="room-living">
+                        <label for="room-living">Living Room</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="room_types" value="Bathroom" id="room-bathroom">
+                        <label for="room-bathroom">Bathroom</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="room_types" value="Office" id="room-office">
+                        <label for="room-office">Office</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="room_types" value="Dining Room" id="room-dining">
+                        <label for="room-dining">Dining Room</label>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label>Material Preferences:</label>
+                <div class="checkbox-grid">
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="materials" value="Wood" id="mat-wood">
+                        <label for="mat-wood">Wood</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="materials" value="Metal" id="mat-metal">
+                        <label for="mat-metal">Metal</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="materials" value="Stone" id="mat-stone">
+                        <label for="mat-stone">Stone</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="materials" value="Glass" id="mat-glass">
+                        <label for="mat-glass">Glass</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="materials" value="Modular" id="mat-modular">
+                        <label for="mat-modular">Modular</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="materials" value="Lighting" id="mat-lighting">
+                        <label for="mat-lighting">Lighting</label>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label>Color Palette Preferences:</label>
+                <div class="checkbox-grid">
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="color_palettes" value="Bright" id="color-bright">
+                        <label for="color-bright">Bright</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="color_palettes" value="Neutral" id="color-neutral">
+                        <label for="color-neutral">Neutral</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="color_palettes" value="Dark" id="color-dark">
+                        <label for="color-dark">Dark</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="color_palettes" value="Pastel" id="color-pastel">
+                        <label for="color-pastel">Pastel</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-buttons">
+                <button type="button" class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button type="button" class="btn btn-primary" onclick="nextStep()">Next</button>
+            </div>
         </div>
 
-        <div>
-            <label for="email">Email:</label>
-            <input type="email" name="email" required>
+        <!-- STEP 3: Pricing & Project Scope (Designer Only) -->
+        <div class="form-step designer-only" data-step="3">
+            <h3 style="margin-bottom: 10px;">Pricing & Project Scope</h3>
+            <p style="color: #6b7280; margin-bottom: 20px; font-size: 0.9rem;">Help clients understand your project capacity</p>
+
+            <div class="form-grid">
+                <div>
+                    <label for="budget_min">Minimum Budget (₹): <span class="required">*</span></label>
+                    <input type="number" name="budget_min" id="budget_min" placeholder="50000">
+                </div>
+                <div>
+                    <label for="budget_max">Maximum Budget (₹): <span class="required">*</span></label>
+                    <input type="number" name="budget_max" id="budget_max" placeholder="500000">
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div>
+                    <label for="project_size">Typical Project Size (sq.ft):</label>
+                    <input type="number" name="project_size" id="project_size" placeholder="1000">
+                </div>
+                <div>
+                    <label for="project_rooms">Typical # of Rooms:</label>
+                    <input type="number" name="project_rooms" id="project_rooms" placeholder="3">
+                </div>
+            </div>
+
+            <div>
+                <label for="project_duration">Average Project Duration: <span class="required">*</span></label>
+                <select name="project_duration" id="project_duration">
+                    <option value="">Select duration</option>
+                    <option value="1-2 weeks">1-2 weeks</option>
+                    <option value="2-4 weeks">2-4 weeks</option>
+                    <option value="1-2 months">1-2 months</option>
+                    <option value="2-3 months">2-3 months</option>
+                    <option value="3+ months">3+ months</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Extra Services Offered:</label>
+                <div class="checkbox-grid">
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="extra_services" value="Furniture Sourcing" id="service-furniture">
+                        <label for="service-furniture">Furniture Sourcing</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="extra_services" value="3D Visualization" id="service-3d">
+                        <label for="service-3d">3D Visualization</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="extra_services" value="On-site Execution" id="service-onsite">
+                        <label for="service-onsite">On-site Execution</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="extra_services" value="Material Sourcing" id="service-material">
+                        <label for="service-material">Material Sourcing</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-buttons">
+                <button type="button" class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button type="button" class="btn btn-primary" onclick="nextStep()">Next</button>
+            </div>
         </div>
 
-        <div>
-            <label for="password">Password:</label>
-            <input type="password" name="password" required>
+        <!-- STEP 4: Client Interaction (Designer Only) -->
+        <div class="form-step designer-only" data-step="4">
+            <h3 style="margin-bottom: 10px;">Client Interaction Preferences</h3>
+            <p style="color: #6b7280; margin-bottom: 20px; font-size: 0.9rem;">How do you prefer to work with clients?</p>
+
+            <div>
+                <label>Preferred Communication Mode: <span class="required">*</span></label>
+                <div class="checkbox-grid">
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="communication" value="Video Call" id="comm-video">
+                        <label for="comm-video">Video Call</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="communication" value="Chat" id="comm-chat">
+                        <label for="comm-chat">Chat</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="communication" value="Email" id="comm-email">
+                        <label for="comm-email">Email</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="communication" value="Phone" id="comm-phone">
+                        <label for="comm-phone">Phone</label>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label for="max_projects">Maximum Simultaneous Projects: <span class="required">*</span></label>
+                <input type="number" name="max_projects" id="max_projects" value="3" min="1" max="20">
+                <small>How many projects can you handle at once?</small>
+            </div>
+
+            <div>
+                <label for="availability">Availability Schedule:</label>
+                <textarea name="availability" id="availability" placeholder="e.g., Monday-Friday: 9AM-6PM, Saturday: 10AM-2PM"></textarea>
+            </div>
+
+            <div class="form-buttons">
+                <button type="button" class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button type="button" class="btn btn-primary" onclick="nextStep()">Next</button>
+            </div>
         </div>
 
-        <div id="extra-fields">
-            <!-- Extra fields will appear here depending on role -->
+        <!-- STEP 5: Portfolio (Designer Only) -->
+        <div class="form-step designer-only" data-step="5">
+            <h3 style="margin-bottom: 10px;">Portfolio & Work Examples</h3>
+            <p style="color: #6b7280; margin-bottom: 20px; font-size: 0.9rem;">Showcase your best work (optional but recommended)</p>
+
+            <div>
+                <label for="portfolio_url">Portfolio Website / Behance / Instagram:</label>
+                <input type="text" name="portfolio_url" id="portfolio_url" placeholder="https://your-portfolio.com">
+            </div>
+
+            <div>
+                <label for="bio">Professional Bio:</label>
+                <textarea name="bio" id="bio" placeholder="Tell clients about your design philosophy and experience..." rows="4"></textarea>
+            </div>
+
+            <div>
+                <label for="portfolio_images">Upload Portfolio Images:</label>
+                <input type="file" name="portfolio_images" id="portfolio_images" multiple accept="image/*">
+                <small>You can upload multiple images (JPG, PNG). Max 5 images.</small>
+            </div>
+
+            <div class="form-buttons">
+                <button type="button" class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button type="button" class="btn btn-primary" onclick="handleSubmit()">Complete Registration</button>
+              <p class="text-center mt-3">
+            <a href="{{ url_for('login_designer') }}">Already have an account? Login</a>
+        </p>
+            </div>
         </div>
 
-        <button type="submit" class="btn">Sign Up</button>
     </form>
 </div>
 
 <script>
-const roleRadios = document.querySelectorAll('input[name="role"]');
-const extraFields = document.getElementById('extra-fields');
+let currentStep = 1;
+let isDesigner = false;
 
+// Function to display the custom flash message and handle optional redirect
+function showMessage(message, isSuccess, redirectUrl = null) {
+    const msgEl = document.getElementById('flash-message');
+    msgEl.textContent = message;
+    msgEl.classList.remove('success', 'error');
+    msgEl.classList.add(isSuccess ? 'success' : 'error', 'show');
+    
+    // Hide message after 4 seconds
+    setTimeout(() => {
+        msgEl.classList.remove('show');
+    }, 4000); 
+
+    // Handle redirection if URL is provided
+    if (redirectUrl) {
+        setTimeout(() => {
+            window.location.href = redirectUrl;
+        }, 2000); // Redirect after 2 seconds
+    }
+}
+
+
+const roleRadios = document.querySelectorAll('input[name="role"]');
 roleRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
-        if (radio.value === 'designer') {
-            extraFields.innerHTML = `
-                <div>
-                    <label for="specialization">Specialization:</label>
-                    <select name="specialization" required>
-                        <option value="">Select</option>
-                        <option value="modern">Modern</option>
-                        <option value="minimalist">Minimalist</option>
-                        <option value="classic">Classic</option>
-                        <option value="eclectic">Eclectic</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="experience">Years of Experience:</label>
-                    <input type="text" name="experience" required>
-                </div>
-            `;
+    radio.addEventListener('change', (e) => {
+        isDesigner = e.target.value === 'designer';
+        
+        // Find the Step 1 form element
+        const step1Form = document.querySelector(`.form-step[data-step="1"]`);
+
+        if (isDesigner) {
+            // Show designer fields in step 1
+            step1Form.querySelectorAll('.designer-only').forEach(el => {
+                el.style.display = 'block';
+            });
+            // Show progress bar
+            document.getElementById('progress-container').classList.add('active');
+            // Change button text
+            document.getElementById('continue-btn').textContent = 'Next Step';
         } else {
-            extraFields.innerHTML = ''; // Homeowners need no extra fields initially
+            // Hide all designer fields in step 1
+            step1Form.querySelectorAll('.designer-only').forEach(el => {
+                 // Check if the element is inside the first step before hiding
+                el.style.display = 'none';
+            });
+            // Hide progress bar
+            document.getElementById('progress-container').classList.remove('active');
+            // Change button text
+            document.getElementById('continue-btn').textContent = 'Sign Up';
         }
     });
 });
+
+function validateStep(step) {
+    const currentForm = document.querySelector(`.form-step[data-step="${step}"]`);
+    let isValid = true;
+    
+    // Basic validation for required fields in the current step
+    currentForm.querySelectorAll('[required], input[name="role"], #specialisation, #phone, #location, #years_experience, #cities_served').forEach(input => {
+        if (!input.value && input.name !== 'role') {
+            isValid = false;
+        }
+    });
+
+    if (step === 1) {
+        // Validate Role selection
+        const role = document.querySelector('input[name="role"]:checked');
+        if (!role) {
+            isValid = false;
+        }
+
+        if (isDesigner) {
+            // Specific required fields for Designer in Step 1
+            const requiredDesignerFields = ['specialisation', 'phone', 'location', 'years_experience', 'cities_served'];
+            requiredDesignerFields.forEach(id => {
+                const input = document.getElementById(id);
+                if (input && !input.value) {
+                    isValid = false;
+                }
+            });
+        }
+    }
+    
+    // Additional validation for Steps 2, 3, 4 (checkboxes, selects) if needed, 
+    // but relying primarily on basic validation for now.
+    if (step === 2) {
+         // Check for at least one design style and one room type
+         const styles = currentForm.querySelectorAll('input[name="design_styles"]:checked').length;
+         const rooms = currentForm.querySelectorAll('input[name="room_types"]:checked').length;
+         if (styles === 0 || rooms === 0) {
+             isValid = false;
+             showMessage('Please select at least one Design Style and one Room Specialization.', false);
+         }
+    }
+    
+    if (step === 3) {
+        // Check required fields for Step 3
+        const requiredFields = ['budget_min', 'budget_max', 'project_duration'];
+        requiredFields.forEach(id => {
+            const input = document.getElementById(id);
+            if (input && !input.value) {
+                isValid = false;
+            }
+        });
+    }
+
+    if (step === 4) {
+        // Check for at least one communication mode
+        const comms = currentForm.querySelectorAll('input[name="communication"]:checked').length;
+        const maxProjects = document.getElementById('max_projects').value;
+        if (comms === 0 || !maxProjects) {
+            isValid = false;
+            showMessage('Please select at least one Communication Mode and specify Max Projects.', false);
+        }
+    }
+
+
+    return isValid;
+}
+
+
+function handleContinue() {
+    if (!validateStep(1)) {
+        showMessage('Please fill in all required fields.', false);
+        return;
+    }
+    
+    if (isDesigner) {
+        // Designer: Step 1 validated, proceed to step 2
+        nextStep();
+    } else {
+        // Homeowner: submission complete, redirect to standard login
+        showMessage('Registration complete! Redirecting to login...', true, 'login.html');
+    }
+}
+
+function nextStep() {
+    // Only allow proceeding if the current step is valid (Designer flow)
+    if (isDesigner && !validateStep(currentStep)) {
+        showMessage('Please fill in all required fields before proceeding.', false);
+        return;
+    }
+
+    if (currentStep < 5) {
+        // Hide current step
+        document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.remove('active');
+        
+        // Move to next step
+        currentStep++;
+        
+        // Show next step
+        const nextEl = document.querySelector(`.form-step[data-step="${currentStep}"]`);
+        if (nextEl) nextEl.classList.add('active');
+        
+        // Update progress indicators
+        updateProgress();
+        
+        // Scroll to top
+        window.scrollTo(0, 0);
+    }
+}
+
+function prevStep() {
+    if (currentStep > 1) {
+        // Hide current step
+        document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.remove('active');
+        
+        // Move to previous step
+        currentStep--;
+        
+        // Show previous step
+        document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.add('active');
+        
+        // Update progress indicators
+        updateProgress();
+        
+        // Scroll to top
+        window.scrollTo(0, 0);
+    }
+}
+
+function handleSubmit() {
+    // Final validation for Step 5 (or other steps if navigation wasn't linear)
+    if (isDesigner && !validateStep(4)) { 
+        showMessage('Please check required fields in previous steps (Client Interaction).', false);
+        return;
+    }
+    
+    const designerLoginUrl = '{{ url_for("login_designer") }}';
+
+        showMessage('Designer registration submitted successfully! Redirecting to designer login...', true, designerLoginUrl);
+}
+
+function updateProgress() {
+    // Update step indicators
+    document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+        const stepNum = index + 1;
+        if (stepNum < currentStep) {
+            indicator.classList.add('completed');
+            indicator.classList.remove('active');
+        } else if (stepNum === currentStep) {
+            indicator.classList.add('active');
+            indicator.classList.remove('completed');
+        } else {
+            indicator.classList.remove('active', 'completed');
+        }
+    });
+    
+    // Update progress bar
+    const progressPercent = ((currentStep - 1) / 4) * 100;
+    document.getElementById('progress-fill').style.width = progressPercent + '%';
+}
 </script>
 
 </body>
