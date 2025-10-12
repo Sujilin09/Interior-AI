@@ -43,10 +43,14 @@ def index():
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
-        
-        # 1. Basic Field Extraction
+        # 1️⃣ Extract role
+        role = request.form.get("role")
+        if not role:
+            flash("Role not specified.", "danger")
+            return redirect(url_for("signup"))
+
+        # 2️⃣ Basic fields extraction
         try:
-            role = request.form["role"] 
             name = request.form["name"]
             email = request.form["email"]
             password_hash = hash_password(request.form["password"])
@@ -54,7 +58,7 @@ def signup():
             flash("Missing basic registration fields. Please try again.", "danger")
             return redirect(url_for("signup"))
 
-        # 2. Check for existing email
+        # 3️⃣ Check if email already exists
         table_name = "user_profiles" if role == "user" else "designers"
         try:
             existing = supabase.table(table_name).select("id").eq("email", email).execute()
@@ -63,157 +67,158 @@ def signup():
                 return redirect(url_for("signup"))
         except Exception as e:
             print(f"Database error during email check: {e}")
-            flash("A database error occurred during registration. Please try again.", "danger")
+            flash("A database error occurred. Please try again.", "danger")
             return redirect(url_for("signup"))
-            
-        # 3. Insert into correct table
+
+        # -------- HOMEOWNER (USER) LOGIC --------
         if role == "user":
-            # --- HOMEOWNER LOGIC ---
-            supabase.table("user_profiles").insert({
-                "user_name": name,
-                "email": email,
-                "password": password_hash
-            }).execute()
-            
-            flash("Signup successful! Now select your preferences.", "success")
-            
-            # Auto-login and pass credentials to preferences route for continuous session
-            return redirect(url_for("preferences", email=email, password_hash=password_hash))
+            # Extract homeowner-specific fields
+            location = request.form.get("location")
+            property_type = request.form.get("property_type")
+            rooms = request.form.get("rooms")
+            budget = request.form.get("budget")
+            timeline = request.form.get("timeline")
+            project_rooms = request.form.getlist("project_rooms")     # checkbox array
+            preferences = request.form.getlist("preferences")       # checkbox array
 
-        elif role == 'designer':
-            # --- DESIGNER LOGIC: COLLECT ALL DATA, VALIDATE, & INSERT ---
+            # Validate required fields
+            if not all([location, property_type, rooms, budget, timeline]):
+                flash("Please fill in all required fields.", "danger")
+                return redirect(url_for("signup"))
 
-            # --- Data Collection and Safe Conversion ---
-            
+            # Insert into Supabase
+            try:
+                supabase.table("user_profiles").insert({
+                    "user_name": name,
+                    "email": email,
+                    "password": password_hash,
+                    "location": location,
+                    "property_type": property_type,
+                    "rooms": rooms,
+                    "budget": budget,
+                    "timeline": timeline,
+                    "project_rooms": project_rooms,
+                    "preferences": preferences
+                }).execute()
+
+                flash("Signup successful! Now you can select your preferences.", "success")
+                # Optionally redirect to a preferences page with email in query params
+                return redirect(url_for("preferences", email=email))
+
+            except Exception as e:
+                print(f"Supabase insert error: {e}")
+                flash("Database insertion failed. Please try again.", "danger")
+                return redirect(url_for("signup"))
+
+        # -------- DESIGNER LOGIC --------
+        elif role == "designer":
             # Step 1 Fields
             specialisation = request.form.get("specialisation")
             phone = request.form.get("phone")
             location = request.form.get("location")
             years_experience_str = request.form.get("years_experience")
             cities_served_str = request.form.get("cities_served", "")
-            
-            # Safe Integer Conversion (Years of Experience - Required)
-            years_experience = int(years_experience_str) if years_experience_str else None # Use None for required integer validation below
 
-            # Step 2 Fields (Arrays)
+            # Safe integer conversion
+            years_experience = int(years_experience_str) if years_experience_str else None
+
+            # Step 2 Fields (arrays)
             design_styles = request.form.getlist("design_styles")
-            room_specializations = request.form.getlist("room_types") 
-            
+            room_specializations = request.form.getlist("room_types")
+
             # Step 3 Fields
             budget_min_str = request.form.get("budget_min")
             budget_max_str = request.form.get("budget_max")
             project_duration = request.form.get("project_duration")
-            
-            # Safe Integer Conversion (Budget - Optional/Nullable)
             budget_range_min = int(budget_min_str) if budget_min_str else None
             budget_range_max = int(budget_max_str) if budget_max_str else None
-
-            # Safe Integer Conversion (Project Size/Rooms - Optional/Nullable)
             project_size_str = request.form.get("project_size")
             project_rooms_str = request.form.get("project_rooms")
             typical_project_size_sqft = int(project_size_str) if project_size_str else None
             typical_project_rooms = int(project_rooms_str) if project_rooms_str else None
-            
+
             # Step 4 Fields
             preferred_communication = request.form.getlist("communication")
             max_projects_str = request.form.get("max_projects")
-            
-            # Safe Integer Conversion (Max Projects - Required)
-            # Use None for validation check below, then default to 3 if database allows 0 or if 3 is the intended minimum
-            max_simultaneous_projects = int(max_projects_str) if max_projects_str else None 
-            
-            # --- Server-Side Validation for NOT NULL fields ---
-            # Use the most basic check and flash the message (assuming signup.html displays flash messages)
-            
+            max_simultaneous_projects = int(max_projects_str) if max_projects_str else None
+
+            # Validate required fields
             required_fields = {
-                "Phone Number": phone, 
+                "Phone Number": phone,
                 "Location": location,
-                "Years of Experience": years_experience, # Checked for None here
+                "Years of Experience": years_experience,
                 "Primary Specialisation": specialisation,
                 "Average Project Duration": project_duration,
-                "Max Simultaneous Projects": max_simultaneous_projects, # Checked for None here
+                "Max Simultaneous Projects": max_simultaneous_projects
             }
-
             required_arrays = {
-                "Design Styles (Step 2)": design_styles,
-                "Room Specializations (Step 2)": room_specializations,
-                "Preferred Communication (Step 4)": preferred_communication,
+                "Design Styles": design_styles,
+                "Room Specializations": room_specializations,
+                "Preferred Communication": preferred_communication
             }
-            
-            for name, value in required_fields.items():
-                if value is None: # Check for None (from safe conversion) or empty string (for strings)
-                    flash(f"Missing required designer field: {name}. Please go back and fill it.", "danger")
+
+            for name_field, value in required_fields.items():
+                if value is None:
+                    flash(f"Missing required designer field: {name_field}", "danger")
                     return redirect(url_for("signup"))
 
-            for name, value in required_arrays.items():
-                if not value: # Checks for empty list []
-                    flash(f"Missing required designer selection: {name}. Please go back and make a choice.", "danger")
+            for name_field, value in required_arrays.items():
+                if not value:
+                    flash(f"Missing required designer selection: {name_field}", "danger")
                     return redirect(url_for("signup"))
-            
-            # --- CONSTRUCT PAYLOAD ---
+
+            # Construct designer payload
             designer_payload = {
                 "designer_name": name,
                 "email": email,
                 "password": password_hash,
-                
-                # Step 1
                 "specialisation": specialisation,
-                "phone": phone, 
+                "phone": phone,
                 "location": location,
-                "cities_served": [city.strip() for city in cities_served_str.split(',') if city.strip()], 
-                "years_experience": years_experience, # Already validated as int
+                "cities_served": [city.strip() for city in cities_served_str.split(',') if city.strip()],
+                "years_experience": years_experience,
                 "studio_name": request.form.get("studio_name"),
                 "certifications": request.form.get("certifications"),
                 "awards": request.form.get("awards"),
-
-                # Step 2
                 "design_styles": design_styles,
                 "room_specializations": room_specializations,
                 "material_preferences": request.form.getlist("materials") or None,
                 "color_palette_preferences": request.form.getlist("color_palettes") or None,
-
-                # Step 3
                 "budget_range_min": budget_range_min,
                 "budget_range_max": budget_range_max,
                 "average_project_duration": project_duration,
                 "typical_project_size_sqft": typical_project_size_sqft,
                 "typical_project_rooms": typical_project_rooms,
                 "extra_services": request.form.getlist("extra_services") or None,
-
-                # Step 4
                 "preferred_communication": preferred_communication,
                 "max_simultaneous_projects": max_simultaneous_projects,
                 "availability_schedule": request.form.get("availability"),
-
-                # Step 5
                 "portfolio_url": request.form.get("portfolio_url"),
-                "bio": request.form.get("bio"),
+                "bio": request.form.get("bio")
             }
-            
-            # --- EXECUTE FINAL INSERT & AUTOMATIC LOGIN ---
+
+            # Insert into Supabase
             try:
                 insert_response = supabase.table("designers").insert(designer_payload).execute()
-                
                 if insert_response.data:
                     designer = insert_response.data[0]
-                    # Added email to session for consistency
-                    session["user"] = {"id": designer["id"], "role": "designer", "name": designer["designer_name"], "email": designer["email"]}
+                    session["user"] = {"id": designer["id"], "role": "designer",
+                                       "name": designer["designer_name"], "email": designer["email"]}
                     flash(f"Registration complete! Welcome, {designer['designer_name']}!", "success")
-                    return redirect(url_for("dashboard")) 
+                    return redirect(url_for("dashboard"))
                 else:
                     flash("Could not create designer profile. Please try again.", "danger")
                     return redirect(url_for("signup"))
-            
             except Exception as e:
-                # Catch database errors
-                print(f"SUPABASE INSERT ERROR: {e}")
+                print(f"Supabase insert error: {e}")
                 flash(f"Database insertion failed. Error: {e}", "danger")
                 return redirect(url_for("signup"))
-        
+
         else:
             flash("Invalid user role submitted.", "danger")
             return redirect(url_for("signup"))
 
+    # GET request
     return render_template("signup.html")
 
 # ----------- USER LOGIN -----------
