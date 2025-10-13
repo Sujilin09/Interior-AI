@@ -836,10 +836,11 @@ function handleSubmit() {
         showMessage('Please check required fields in previous steps (Client Interaction).', false);
         return;
     }
+    const form = document.getElementById('signup-form');
     
-    const designerLoginUrl = '{{ url_for("login_designer") }}';
 
-        showMessage('Designer registration submitted successfully! Redirecting to designer login...', true, designerLoginUrl);
+        showMessage('Designer registration submitted successfully! Redirecting to designer login...', true);
+        form.submit();
 }
 
 function updateProgress() {

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Designer Dashboard | DesignAI</title>
+    <style>
+        /* BASIC INLINE STYLES FOR STRUCTURE (REPLACE WITH EXTERNAL CSS) */
+        body { font-family: sans-serif; margin: 0; background-color: #f4f5f7; display: flex; }
+        .sidebar { width: 220px; background-color: #1a202c; color: white; padding: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        .sidebar a { color: #cbd5e1; text-decoration: none; display: block; padding: 10px 0; font-size: 0.9rem; }
+        .sidebar a.active { color: #fff; font-weight: bold; }
+        .main-content { flex-grow: 1; padding: 20px 40px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { font-size: 1.5rem; margin: 0; }
+        .overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .main-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+        .client-request, .portfolio-item { border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin-bottom: 15px; }
+        .request-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .badge { background-color: #4f46e5; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
+        .market-insight-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .earnings-summary { border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2 style="font-size: 1.2rem; margin-bottom: 30px; color: #4f46e5;">DesignAI</h2>
+        <nav>
+            <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
+            <a href="{{ url_for('designer_profile') }}">My Portfolio <span style="float: right;">24</span></a>
+            <a href="#">Client Requests <span style="float: right;">7</span></a>
+            <a href="#">Schedule <span style="float: right;">3</span></a>
+            <a href="#">Messages <span style="float: right;">12</span></a>
+            <a href="#">Analytics</a>
+            <a href="#">Earnings <span style="float: right;">45</span></a>
+            <a href="#">Reviews</a>
+            <a href="#">Contracts</a>
+            <a href="#">Settings</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        
+        <div class="header">
+            <h1 style="color: #1a202c;">Dashboard</h1>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <input type="search" placeholder="Search clients, projects..." style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <div style="width: 30px; height: 30px; background-color: #4f46e5; border-radius: 50%;"></div>
+            </div>
+        </div>
+        
+        <div class="card" style="margin-bottom: 30px;">
+            <h2 style="font-size: 1.2rem; margin-bottom: 15px;">Performance Overview</h2>
+            <div class="overview-grid">
+                <div style="border-right: 1px solid #e2e8f0;">
+                    <p style="color: #6b7280; margin-bottom: 5px;">Total Projects</p>
+                    <p style="font-size: 1.8rem; font-weight: bold; color: #1a202c;">24</p>
+                    <p style="font-size: 0.8rem; color: #6b7280;">Across all categories</p>
+                </div>
+                <div style="border-right: 1px solid #e2e8f0; padding-left: 20px;">
+                    <p style="color: #6b7280; margin-bottom: 5px;">This Month's Bookings</p>
+                    <p style="font-size: 1.8rem; font-weight: bold; color: #1a202c;">7</p>
+                    <p style="font-size: 0.8rem; color: #6b7280;">Sep 1-30</p>
+                </div>
+                <div style="padding-left: 20px;">
+                    <p style="color: #6b7280; margin-bottom: 5px;">Average Rating</p>
+                    <p style="font-size: 1.8rem; font-weight: bold; color: #1a202c;">4.8 <span style="font-size: 1rem; color: gold;">★</span></p>
+                    <p style="font-size: 0.8rem; color: #6b7280;">Based on 112 reviews</p>
+                </div>
+            </div>
+            
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px;">
+                <h3 style="display: flex; justify-content: space-between; font-size: 1.1rem; margin-bottom: 15px;">
+                    My Portfolio
+                    <button style="background-color: #4f46e5; color: white; padding: 5px 15px; border: none; border-radius: 4px;">+ Add New Project</button>
+                </h3>
+                <div style="display: flex; gap: 20px; overflow-x: auto;">
+                    <div class="portfolio-item" style="min-width: 200px;">
+                        <img src="placeholder.jpg" alt="Modern Living Room" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px;">
+                        <p style="font-weight: bold; margin: 10px 0 5px 0;">Modern Living Room Redesign</p>
+                        <small style="color: #6b7280;">Living Room</small>
+                    </div>
+                    <div class="portfolio-item" style="min-width: 200px;">
+                        <img src="placeholder.jpg" alt="Minimalist Bedroom" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px;">
+                        <p style="font-weight: bold; margin: 10px 0 5px 0;">Minimalist Bedroom Design</p>
+                        <small style="color: #6b7280;">Bedroom</small>
+                    </div>
+                    <div class="portfolio-item" style="min-width: 200px;">
+                        <img src="placeholder.jpg" alt="Contemporary Kitchen" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px;">
+                        <p style="font-weight: bold; margin: 10px 0 5px 0;">Contemporary Kitchen</p>
+                        <small style="color: #6b7280;">Kitchen</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="main-layout">
+            
+            <div>
+                <h2 style="font-size: 1.2rem; margin-bottom: 20px;">Client Requests</h2>
+                
+                <div class="card client-request">
+                    <div class="request-header">
+                        <p style="font-weight: bold;">Sarah Johnson</p>
+                        <span class="badge" style="background-color: green;">New</span>
+                    </div>
+                    <p style="margin: 0 0 10px 0; font-weight: bold;">Living Room Redesign</p>
+                    <p style="color: #6b7280; font-size: 0.9rem;">Looking for a modern minimalist design for my 300 sq.ft living room...</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                        <span style="font-weight: bold; color: #4f46e5;">₹50,000 - ₹75,000</span>
+                        <small style="color: #6b7280;">@ compatibility: 86%</small>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button style="background-color: #10b981; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Accept</button>
+                        <button style="background-color: #f59e0b; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Chat</button>
+                        <button style="background-color: #ef4444; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Decline</button>
+                    </div>
+                </div>
+                
+                <div class="card client-request">
+                    <div class="request-header">
+                        <p style="font-weight: bold;">Raj Patel</p>
+                        <span class="badge" style="background-color: red;">Urgent</span>
+                    </div>
+                    <p style="margin: 0 0 10px 0; font-weight: bold;">Complete Home Makeover</p>
+                    <p style="color: #6b7280; font-size: 0.9rem;">Need complete interior design for 3BHK apartment with contemporary style...</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                        <span style="font-weight: bold; color: #4f46e5;">₹2,00,000 - ₹3,00,000</span>
+                        <small style="color: #6b7280;">@ compatibility: 74%</small>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button style="background-color: #10b981; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Accept</button>
+                        <button style="background-color: #f59e0b; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Chat</button>
+                        <button style="background-color: #ef4444; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Decline</button>
+                    </div>
+                </div>
+
+                <div class="card client-request">
+                    <div class="request-header">
+                        <p style="font-weight: bold;">Priya Sharma</p>
+                        <span class="badge" style="background-color: #3b82f6;">Active</span>
+                    </div>
+                    <p style="margin: 0 0 10px 0; font-weight: bold;">Bedroom Design</p>
+                    <p style="color: #6b7280; font-size: 0.9rem;">Small bedroom needs smart storage solutions and cozy atmosphere...</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                        <span style="font-weight: bold; color: #4f46e5;">₹30,000 - ₹45,000</span>
+                        <small style="color: #6b7280;">@ compatibility: 62%</small>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button style="background-color: #10b981; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Accept</button>
+                        <button style="background-color: #f59e0b; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Chat</button>
+                        <button style="background-color: #ef4444; color: white; padding: 8px 15px; border: none; border-radius: 4px;">Decline</button>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div>
+                
+                <div class="card" style="margin-bottom: 30px;">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 15px; display: flex; justify-content: space-between;">
+                        Upcoming Schedule
+                        <a href="#" style="font-size: 0.9rem; color: #4f46e5; text-decoration: none;">View All</a>
+                    </h2>
+                    <div style="font-size: 0.9rem;">
+                        <div style="padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
+                            <p style="font-weight: bold; margin: 0;">Client Consultation - Sarah Johnson</p>
+                            <small style="color: #6b7280;">10:00 AM - Today</small>
+                        </div>
+                        <div style="padding: 10px 0; border-bottom: 1px dashed #e2e8f0;">
+                            <p style="font-weight: bold; margin: 0;">Site Visit - Sector 18, Noida</p>
+                            <small style="color: #6b7280;">3:00 PM - Today</small>
+                        </div>
+                        <div style="padding: 10px 0;">
+                            <p style="font-weight: bold; margin: 0;">Design Review - Priya Sharma</p>
+                            <small style="color: #6b7280;">11:00 AM - Dec 20</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-bottom: 30px;">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 15px; display: flex; justify-content: space-between;">
+                        Earnings Overview
+                        <span style="font-size: 0.9rem; color: #6b7280;">This Month</span>
+                    </h2>
+                    <div class="earnings-summary">
+                        <p style="display: flex; justify-content: space-between; font-size: 1.5rem; font-weight: bold; color: #4f46e5;">
+                            Total Earnings
+                            <span style="color: #1a202c;">₹1,24,500</span>
+                        </p>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-top: 10px; color: #10b981;">
+                            <p>This Month</p>
+                            <p style="font-weight: bold;">₹45,200 <span style="font-weight: normal; color: #10b981;">+12%</span></p>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #ef4444;">
+                            <p>Pending</p>
+                            <p style="font-weight: bold;">₹18,750</p>
+                        </div>
+                        
+                        <button style="width: 100%; background-color: #1a202c; color: white; padding: 10px; border: none; border-radius: 4px; margin-top: 20px;">
+                            $ Request Payout
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 15px;">Market Insights</h2>
+                    <h4 style="font-size: 1rem; color: #1a202c;">Trending Categories</h4>
+                    <div class="market-insight-item">
+                        <p>Minimalist Design</p>
+                        <p style="color: #10b981;">+23%</p>
+                    </div>
+                    <div class="market-insight-item">
+                        <p>Smart Home Integration</p>
+                        <p style="color: #10b981;">+9%</p>
+                    </div>
+                    <div class="market-insight-item">
+                        <p>Vintage Decor</p>
+                        <p style="color: #ef4444;">-8%</p>
+                    </div>
+                    
+                    <h4 style="font-size: 1rem; color: #1a202c; margin-top: 20px;">Popular Styles</h4>
+                    <div style="font-size: 0.9rem;">
+                        <p style="display: flex; justify-content: space-between;"><span>Modern Minimalist</span> <span>34%</span></p>
+                        <p style="display: flex; justify-content: space-between;"><span>Contemporary</span> <span>28%</span></p>
+                        <p style="display: flex; justify-content: space-between;"><span>Scandinavian</span> <span>22%</span></p>
+                        <p style="display: flex; justify-content: space-between;"><span>Industrial</span> <span>16%</span></p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+    </div>
+
+</body>
+</html>
