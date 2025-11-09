@@ -48,45 +48,112 @@ def login_required(f):
 def index():
     return render_template("index.html")
 
-# ----------- SIGNUP (Unchanged) -----------
+# ----------- SIGNUP -----------
+@app.route("/signup", methods=["GET", "POST"])
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
-    # ... (all signup logic remains here, including the designer_payload construction) ...
     if request.method == "POST":
-        
-        # 1. Basic Field Extraction
-        try:
-            role = request.form["role"] 
-            name = request.form["name"]
-            email = request.form["email"]
-            password_hash = hash_password(request.form["password"])
-        except KeyError:
-            flash("Missing basic registration fields. Please try again.", "danger")
+        print("\n====== SIGNUP FORM DATA RECEIVED ======")
+        print(dict(request.form))
+        print("=======================================")
+
+        # Step 1: Extract Basic Fields Safely
+        role = request.form.get("role")
+        name = request.form.get("name")
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        if not all([role, name, email, password]):
+            flash("Missing basic registration details. Please try again.", "danger")
+            print("❌ Missing role/name/email/password in form data.")
             return redirect(url_for("signup"))
 
-        # 2. Check for existing email
+        password_hash = hash_password(password)
+
+        # Step 2: Check for existing email
         table_name = "user_profiles" if role == "user" else "designers"
         try:
             existing = supabase.table(table_name).select("id").eq("email", email).execute()
             if existing.data:
-                flash("Email already registered!", "danger")
+                flash("Email already registered! Try logging in.", "danger")
+                print(f"⚠️ Email {email} already exists in {table_name}.")
                 return redirect(url_for("signup"))
         except Exception as e:
-            print(f"Database error during email check: {e}")
-            flash("A database error occurred during registration. Please try again.", "danger")
+            print(f"❌ Database error during email check: {e}")
+            flash("Database error during validation. Please try again.", "danger")
             return redirect(url_for("signup"))
-            
-        # 3. Insert into correct table
+
+        # Step 3: Insert based on role
         if role == "user":
-            # --- HOMEOWNER LOGIC ---
-            supabase.table("user_profiles").insert({
+            print("🧩 Processing Homeowner Signup...")
+
+            # Extract homeowner data
+            user_city = request.form.get("user_city")
+            user_budget = request.form.get("user_budget")
+            user_rooms = request.form.getlist("user_rooms")
+            user_styles = request.form.getlist("user_styles")
+            user_property_type = request.form.get("user_property_type")
+            user_bhk = request.form.get("user_bhk")
+            user_timeline = request.form.get("user_timeline")
+
+            print(f"[DEBUG] role={role}, name={name}, email={email}")
+            print(f"[DEBUG] user_city={user_city}, property_type={user_property_type}, user_rooms={user_rooms}, user_styles={user_styles}")# Validation checks
+            required_fields = {
+                "City": user_city,
+                "Budget": user_budget,
+                "Property Type": user_property_type,
+                "BHK Configuration": user_bhk,
+                "Timeline": user_timeline,
+            }
+
+            for field, value in required_fields.items():
+                if not value or not value.strip():
+                    flash(f"Missing required homeowner field: {field}.", "danger")
+                    print(f"❌ Missing homeowner field: {field}")
+                    return redirect(url_for("signup"))
+
+            if not user_rooms:
+                flash("Please select at least one room to design.", "danger")
+                print("❌ Missing user_rooms.")
+                return redirect(url_for("signup"))
+
+            if not user_styles:
+                flash("Please select at least one design style.", "danger")
+                print("❌ Missing user_styles.")
+                return redirect(url_for("signup"))
+
+            # Prepare payload
+            user_payload = {
                 "user_name": name,
                 "email": email,
-                "password": password_hash
-            }).execute()
-            
-            flash("Signup successful! Now select your preferences.", "success")
-            return redirect(url_for("preferences", email=email, password_hash=password_hash))
+                "password": password_hash,
+                "user_city": user_city,
+                "user_budget": user_budget,
+                "user_rooms": user_rooms,
+                "user_styles": user_styles,
+                "user_property_type": user_property_type,
+                "user_bhk": user_bhk,
+                "user_timeline": user_timeline,
+                "is_complete": True,
+            }
+
+            try:
+                insert_response = supabase.table("user_profiles").insert(user_payload).execute()
+                print("🗄️ SUPABASE INSERT RESPONSE:", insert_response)
+
+                # Accept either `data` or success status 201
+                if insert_response.data or getattr(insert_response, "status_code", None) == 201:
+                    flash("Registration complete! Redirecting to login...", "success")
+                    print(" Homeowner inserted successfully.")
+                    return redirect(url_for("login_user"))
+                else:
+                    flash("Registration succeeded but response was empty. Please verify in database.", "warning")
+                    print(" Insert returned empty data but likely succeeded.")
+                    return redirect(url_for("login_user"))
+            except Exception as e:
+                print(f"SUPABASE INSERT ERROR (Homeowner): {e}")
+                flash("Database error during homeowner registration. Please try again.", "danger")
+                return redirect(url_for("signup"))
 
         elif role == 'designer':
             # --- DESIGNER LOGIC: COLLECT ALL DATA, VALIDATE, & INSERT ---
@@ -372,6 +439,10 @@ def update_designer_profile():
 
     # 3. Redirect back to the profile page to show the updated data and flash message
     return redirect(url_for("designer_profile"))
+
+# ... (Imports and Setup remain UNCHANGED) ...
+
+# ... (Routes up to signup() remain UNCHANGED) ...
 
 
 if __name__ == "__main__":
