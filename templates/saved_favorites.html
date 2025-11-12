@@ -4,8 +4,103 @@
 
 {% block head %}
 <style>
-    /* Shared styles */
-    .favorite-card { position: relative; }
+    /* --- NEW MASONRY GRID --- */
+    .favorites-grid-masonry {
+        /* Define columns for a "Pinterest" style layout */
+        column-count: 3; /* Default to 3 columns */
+        column-gap: 1.5rem; /* Space between columns */
+        
+        /* This is for the "empty" message */
+        position: relative;
+    }
+
+    .favorite-card {
+        /* This is the magic part: stops cards from breaking in half */
+        break-inside: avoid; 
+        
+        /* Standard card stuff */
+        position: relative;
+        display: inline-block; /* Required for columns */
+        width: 100%;
+        margin-bottom: 1.5rem; /* Space below each card */
+        
+        /* Re-adding base card styles from your main CSS */
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        overflow: hidden; 
+        box-sizing: border-box; /* Good practice */
+    }
+    
+    /* Responsive: 2 columns for tablets */
+    @media (max-width: 1024px) {
+        .favorites-grid-masonry {
+            column-count: 2;
+        }
+    }
+
+    /* Responsive: 1 column for mobile */
+    @media (max-width: 640px) {
+        .favorites-grid-masonry {
+            column-count: 1;
+        }
+    }
+    
+    /* --- END NEW MASONRY --- */
+
+
+    /* --- CARD-SPECIFIC STYLES --- */
+
+    /* Designer Card: Needs padding */
+    .designer-card {
+        padding: 1.5rem;
+    }
+    .designer-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .designer-initials {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #f0f0f0;
+        color: #555;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .designer-name h4 { margin: 0; font-size: 1.1rem; }
+    .designer-name small { color: #777; }
+    .designer-rating { margin-bottom: 1rem; }
+    .designer-meta p { margin: 0.25rem 0; color: #555; }
+
+
+    /* AI Design Card: Image height is now auto! */
+    .ai-design-card .result-image {
+        width: 100%;
+        height: auto; /* Let the image define its height */
+        overflow: hidden;
+    }
+    .ai-design-card .result-image img {
+        width: 100%;
+        height: auto;
+        display: block; /* Fixes potential bottom-margin issues */
+        object-fit: cover;
+    }
+    .ai-design-card .result-info {
+        padding: 1rem; /* Add padding to match designer card */
+    }
+    .ai-design-card .btn-secondary {
+        margin: 0 1rem 1rem 1rem;
+        width: calc(100% - 2rem); /* Adjust button width */
+    }
+
+    /* Like Button (Unchanged from your code) */
     .like-button {
         position: absolute;
         top: 1rem;
@@ -20,11 +115,12 @@
         justify-content: center;
         cursor: pointer;
         transition: all 0.2s ease;
+        z-index: 2; /* Make sure it's on top */
     }
     .like-button i {
         font-size: 24px;
-        color: #EF4444; /* Start as RED */
-        font-weight: bold; /* Start as FILLED */
+        color: #EF4444;
+        font-weight: bold;
     }
     .like-button:hover {
         background: white;
@@ -34,18 +130,6 @@
         transition: opacity 0.3s ease, transform 0.3s ease;
         opacity: 0;
         transform: scale(0.9);
-    }
-
-    /* AI Design Card specific styles */
-    .ai-design-card .result-image {
-        width: 100%;
-        height: 250px;
-        overflow: hidden;
-    }
-    .ai-design-card .result-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
     }
 </style>
 {% endblock %}
@@ -57,9 +141,9 @@
     <section class="recommended-designers" style="margin-top: 0;">
         <div class="section-header">
             <h3>My Saved Favorites</h3>
-            </div>
+        </div>
         
-        <div class.="designers-grid" id="favorites-grid">
+        <div class="favorites-grid-masonry" id="favorites-grid">
             
             {% for item in all_favorites %}
                 
@@ -94,7 +178,7 @@
                 </div>
 
                 {% elif item.favorite_type == 'ai_image' %}
-                <div class.="result-card card favorite-card ai-design-card" id="card-ai_image-{{ item.design_id }}">
+                <div class="result-card card favorite-card ai-design-card" id="card-ai_image-{{ item.design_id }}">
                     <button 
                         class="like-button liked" 
                         data-item-id="{{ item.design_id }}"
@@ -142,9 +226,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (itemType === 'designer') {
             apiUrl = `/api/designer/${itemId}/like`;
         } else if (itemType === 'ai_image') {
-            apiUrl = `/redesign/api/designs/${itemId}/like`; // Note the blueprint prefix!
+            apiUrl = `/redesign/api/designs/${itemId}/like`;
         } else {
-            return; // Unknown type
+            return;
         }
 
         if (card) {

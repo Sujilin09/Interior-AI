@@ -416,7 +416,7 @@ def dashboard():
             elif status == "pending":
                 pending_earnings += amount
 
-        print(f"Total Earnings: ₹{total_earnings:,} | Pending: ₹{pending_earnings:,}")
+        print(f"Total Earnings: Rs.{total_earnings:,} | Pending: Rs.{pending_earnings:,}")
 
         # ---------- UPCOMING SCHEDULE ----------
         upcoming_schedule = sorted(
