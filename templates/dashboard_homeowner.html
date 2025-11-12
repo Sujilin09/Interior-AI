@@ -1,0 +1,138 @@
+{% extends "layout.html" %}
+
+{% block title %}My Dashboard - DesignAI{% endblock %}
+
+{% block content %}
+    <main class="main-content">
+        
+        <section class="card quick-upload">
+            <h3>Start a New Project</h3>
+            <div class="dropzone">
+                <i class='bx bx-upload'></i>
+                <p><strong>Ready to redesign your room?</strong></p>
+                <span>Click the button below to start the AI wizard.</span>
+                <div class="upload-buttons">
+                    <a href="{{ url_for('redesign.upload_wizard') }}" class="btn-primary" style="text-decoration: none;">
+                        <i class='bx bx-magic-wand'></i> Start AI Redesign
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="recent-uploads">
+            <h3>Recent Uploads</h3>
+            <div class="uploads-grid">
+                {% for upload in recent_uploads %}
+                <div class="upload-card">
+                    <img src="{{ upload.img_url }}" alt="{{ upload.name }}">
+                    <p>{{ upload.name }}</p>
+                </div>
+                {% else %}
+                <p class="empty-placeholder">You haven't uploaded any photos yet.</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="ai-results">
+            <div class="section-header">
+                <h3>AI Design Results</h3>
+                <a href="#" class="view-all">View All Results <i class='bx bx-chevron-right'></i></a>
+            </div>
+            <div class="results-grid">
+                {% for result in ai_results %}
+                <div class="result-card card">
+                    <div class="result-image">
+                        <img src="{{ result.after_img }}" alt="{{ result.style }} After">
+                        <div class="before-after-toggle">
+                            <button class="toggle-btn active">After</button>
+                            <button class="toggle-btn">Before</button>
+                        </div>
+                    </div>
+                    <div class="result-info">
+                        <h4>{{ result.style }}</h4>
+                        <span class="match-score">{{ result.match }} match</span>
+                    </div>
+                    <button class="btn-secondary full-width">View Details</button>
+                </div>
+                {% else %}
+                <p class="empty-placeholder">Upload a photo to see your AI design results here.</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="smart-predictions">
+            <h3>Smart Predictions</h3>
+            <div class="predictions-grid">
+                <div class="prediction-card card">
+                    <div class="card-icon"><i class='bx bx-dollar-circle'></i></div>
+                    <span>Estimated Budget</span>
+                    <strong>{{ smart_predictions.budget }}</strong>
+                    <small>Based on your room size</small>
+                </div>
+                <div class="prediction-card card">
+                    <div class="card-icon"><i class='bx bx-time-five'></i></div>
+                    <span>Timeline</span>
+                    <strong>{{ smart_predictions.timeline }}</strong>
+                    <small>Including procurement</small>
+                </div>
+                <div class="prediction-card card">
+                    <div class="card-icon"><i class='bx bx-star'></i></div>
+                    <span>Style Match</span>
+                    <strong>{{ smart_predictions.style_match }}</strong>
+                    <small>Confidence score</small>
+                </div>
+                <div class="prediction-card card">
+                    <div class="card-icon"><i class='bx bx-trending-up'></i></div>
+                    <span>Trending Now</span>
+                    <strong>{{ smart_predictions.trending }}</strong>
+                    <small>Popular this month</small>
+                </div>
+            </div>
+        </section>
+
+        <section class="recommended-designers">
+            <div class="section-header">
+                <h3>Recommended Designers</h3>
+                <div class="filters">
+                    <button class="filter-btn">Budget</button>
+                    <button class="filter-btn">Style</button>
+                    <button class="filter-btn">Location</button>
+                    <button class="filter-btn">Rating</button>
+                </div>
+            </div>
+            <div class="designers-grid">
+                {% for designer in recommended_designers %}
+                <div class="designer-card card">
+                    <div class="designer-header">
+                        <div class="designer-initials">{{ designer.initials }}</div>
+                        <div class="designer-name">
+                            <h4>{{ designer.name }}</h4>
+                            <small>{{ designer.style }}</small>
+                        </div>
+                    </div>
+                    <div class="designer-rating">
+                        <i class='bx bxs-star'></i>
+                        <strong>{{ designer.rating }}</strong>
+                        <span>({{ designer.reviews }} reviews)</span>
+                    </div>
+                    <div class="designer-meta">
+                        <p><i class='bx bx-map'></i> {{ designer.location }}</p>
+                        <p><i class='bx bx-rupee'></i> {{ designer.budget }}</p>
+                    </div>
+                    <button class="btn-secondary full-width">View Portfolio</button>
+                    
+                    {% if designer.available %}
+                    <div class="designer-availability">
+                        <span class="status-dot"></span> Available
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p classs="empty-placeholder">No designers match your criteria right now.</p>
+                {% endfor %}
+            </div>
+            <p class="recommendation-footer">Because you liked Modern Minimalist...</p>
+        </section>
+
+    </main>
+{% endblock %}
