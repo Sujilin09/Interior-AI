@@ -1108,17 +1108,16 @@ function handleSubmit() {
     }
     const form = document.getElementById('signup-form');
     
-<<<<<<< HEAD
 
         showMessage('Designer registration submitted successfully! Redirecting to designer login...', true);
         form.submit();
-=======
+
    form.action = "/signup"; 
     form.method = "POST";
     
     // Submit the form
     form.submit();
->>>>>>> origin/sandhika
+
 }
 
 function updateProgress() {
