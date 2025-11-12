@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Designer Dashboard | InteriorAI</title>
+    <style>
+        /* 🎨 InteriorAI Dashboard Styling */
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            background-color: #f7fafc;
+            display: flex;
+        }
+        .sidebar {
+            width: 220px;
+            background-color: #1a202c;
+            color: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .sidebar a {
+            color: #cbd5e1;
+            text-decoration: none;
+            display: block;
+            padding: 10px 0;
+            font-size: 0.9rem;
+            transition: color 0.15s ease-in-out;
+        }
+        .sidebar a:hover { color: #38c172; }
+        .sidebar a.active {
+            color: #e0e8e0;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px 40px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header h1 { font-size: 1.5rem; margin: 0; color: #1a202c; }
+        .card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .portfolio-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 10px;
+            min-width: 200px;
+        }
+        .btn-green {
+            background-color: #38c172;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+        .btn-green:hover { background-color: #2fa163; }
+        .btn-dark {
+            background-color: #1a202c;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: white;
+            font-size: 0.75rem;
+        }
+        .badge.active { background-color: #4f46e5; }
+        .badge.pending { background-color: #f59e0b; }
+        .badge.completed { background-color: #38c172; }
+        .main-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+        .market-insight-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2 style="margin-bottom: 30px; color: #38c172;">InteriorAI</h2>
+        <nav>
+            <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
+            <a href="{{ url_for('designer_profile') }}">My Portfolio <span style="float: right;">{{ total_projects }}</span></a>
+            <a href="#">Messages</a>
+            <a href="#">Analytics</a>
+            <a href="#">Earnings</a>
+            <a href="#">Settings</a>
+        </nav>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+
+        <!-- HEADER -->
+        <div class="header">
+            <h1>Welcome, {{ designer.designer_name }}!</h1>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <input type="search" placeholder="Search clients, projects..." style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <div style="width: 30px; height: 30px; background-color: #38c172; border-radius: 50%;"></div>
+            </div>
+        </div>
+
+        <!-- PERFORMANCE OVERVIEW -->
+        <div class="card">
+            <h2>Performance Overview</h2>
+            <div class="overview-grid">
+                <div>
+                    <p style="color: #6b7280;">Total Projects</p>
+                    <h3>{{ total_projects }}</h3>
+                    <small>Across all categories</small>
+                </div>
+                <div>
+                    <p style="color: #6b7280;">This Month's Bookings</p>
+                    <h3>{{ monthly_bookings }}</h3>
+                    <small>{{ current_month }}</small>
+
+                </div>
+                <div>
+                    <p style="color: #6b7280;">Average Rating</p>
+                    <h3>{{ avg_rating }} <span style="color: gold;">★</span></h3>
+                    <small>Based on {{ total_reviews }} reviews</small>
+                </div>
+            </div>
+
+            <!-- PORTFOLIO -->
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px;">
+                <h3 style="display: flex; justify-content: space-between;">
+                    My Portfolio
+                    <button class="btn-green">+ Add New Project</button>
+                </h3>
+                <div style="display: flex; gap: 20px; overflow-x: auto;">
+                    {% for item in portfolio %}
+                    <div class="portfolio-item">
+                        <img src="{{ item.image_url or '/static/images/placeholder.jpg' }}" alt="{{ item.project_title }}"
+                            style="width:100%; height:100px; object-fit:cover; border-radius:4px;">
+                        <p style="font-weight:bold; margin:10px 0 5px 0;">{{ item.project_title }}</p>
+                        <small style="color:#6b7280;">{{ item.room_type }}</small>
+                    </div>
+                    {% else %}
+                    <p style="color:#6b7280;">No portfolio items uploaded yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- TWO-COLUMN MAIN LAYOUT -->
+        <div class="main-layout">
+
+            <!-- LEFT COLUMN (Client Requests) -->
+            <div>
+                <h2 style="font-size: 1.2rem; margin-bottom: 20px;">Client Requests</h2>
+
+                {% if upcoming_schedule %}
+                    {% for s in upcoming_schedule %}
+                    <div class="card">
+                        <div style="display:flex; justify-content:space-between;">
+                            <p style="font-weight:bold;">{{ s.notes or "Client Request" }}</p>
+                            <span class="badge {{ s.booking_status }}">{{ s.booking_status|capitalize }}</span>
+                        </div>
+                        <p style="color:#6b7280; font-size:0.9rem;">Scheduled on: {{ s.booking_date | datetimeformat }}</p>
+                        <div style="margin-top:15px;">
+                            <button class="btn-green">Accept</button>
+                            <button class="btn-dark">Chat</button>
+                            <button style="background-color:#ef4444; color:white; border:none; border-radius:4px; padding:8px 15px;">Decline</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color:#6b7280;">No client requests yet.</p>
+                {% endif %}
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div>
+
+                <!-- UPCOMING SCHEDULE -->
+                <div class="card">
+                    <h2 style="display:flex; justify-content:space-between;">
+                        Upcoming Schedule
+                        <a href="#" style="font-size:0.9rem; color:#4f46e5; text-decoration:none;">View All</a>
+                    </h2>
+                    {% for s in upcoming_schedule %}
+                    <div style="padding:10px 0; border-bottom:1px dashed #e2e8f0;">
+                        <p style="font-weight:bold; margin:0;">{{ s.notes or "Meeting" }}</p>
+                        <small style="color:#6b7280;">{{ s.booking_date | datetimeformat }}</small>
+                    </div>
+                    {% else %}
+                    <p style="color:#6b7280;">No upcoming meetings scheduled.</p>
+                    {% endfor %}
+                </div>
+
+                <!-- EARNINGS OVERVIEW -->
+                <div class="card">
+                    <h2 style="display:flex; justify-content:space-between;">
+                        Earnings Overview
+                        <span style="color:#6b7280;">This Month</span>
+                    </h2>
+                    <div>
+                        <p style="display:flex; justify-content:space-between; font-size:1.4rem; font-weight:bold; color:#38c172;">
+                            Total Earnings
+                            <span style="color:#1a202c;">₹{{ "{:,.0f}".format(total_earnings) }}</span>
+                        </p>
+                        <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-top:10px; color:#38c172;">
+                            <p>Pending</p>
+                            <p style="color:#ef4444;">₹{{ "{:,.0f}".format(pending_earnings) }}</p>
+                        </div>
+                        <button class="btn-dark" style="margin-top:15px;">$ Request Payout</button>
+                    </div>
+                </div>
+
+                <!-- MARKET INSIGHTS -->
+                <div class="card">
+                    <h2>Market Insights</h2>
+                    <h4 style="margin-top:10px;">Popular Styles</h4>
+                    <div style="font-size:0.9rem;">
+                        {% for item in popular_styles %}
+                        <p style="display:flex; justify-content:space-between;">
+                            <span>{{ item.style }}</span>
+                            <span>{{ item.percent }}%</span>
+                        </p>
+                        {% else %}
+                        <p style="color:#6b7280;">No style data yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

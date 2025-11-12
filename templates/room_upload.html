@@ -1,0 +1,372 @@
+{% extends "layout.html" %}
+
+{% block title %}AI Redesign Wizard - DesignAI{% endblock %}
+
+{% block head %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Styles for Wizard */
+        :root {
+            --primary-600: #059669; /* Green */
+            --primary-800: #065F46;
+            --primary-50: #F0FDF4;
+        }
+        .step { display: none; }
+        .step.active { display: block; }
+        .step-indicator {
+            background-color: #E5E7EB; /* gray-200 */
+            color: #6B7280; /* gray-500 */
+        }
+        .step-indicator.active {
+            background-color: var(--primary-600);
+            color: white;
+        }
+        .step-indicator.completed {
+            background-color: var(--primary-800);
+            color: white;
+        }
+        #file-drop-area.dragover {
+            border-color: var(--primary-600);
+            background-color: var(--primary-50);
+        }
+        input[type="radio"]:checked, input[type="checkbox"]:checked {
+            color: var(--primary-600);
+        }
+        input[type="radio"]:checked:focus, input[type="checkbox"]:checked:focus {
+            ring-color: var(--primary-600);
+        }
+        label:has(input:checked) {
+            border-color: var(--primary-600) !important;
+            background-color: var(--primary-50);
+        }
+        /* Style for the "like" button */
+        .like-button .icon-filled { display: none; }
+        .like-button .icon-stroked { display: block; }
+        .like-button.liked { color: #EF4444; /* red-500 */ }
+        .like-button.liked .icon-filled { display: block; }
+        .like-button.liked .icon-stroked { display: none; }
+
+        /* This is CRITICAL. We need to override the dashboard CSS 
+          to make the wizard content centered.
+        */
+        .main-content-wizard {
+            grid-area: main;
+            padding: 2rem;
+            background-color: #f9fafb; /* gray-50 */
+            overflow-y: auto;
+            /* This centers the wizard */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Aligns to top */
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<main class="main-content-wizard">
+
+    <div class="w-full max-w-4xl bg-white shadow-xl rounded-2xl overflow-hidden">
+        <div class="bg-white p-6 border-b border-gray-200">
+            <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">AI Redesign Wizard</h1>
+            <div class="flex items-start justify-between max-w-2xl mx-auto">
+                <div class="flex-1 text-center">
+                    <div class="step-indicator w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-2">1</div>
+                    <p class="text-sm font-medium text-gray-700">Upload Room</p>
+                </div>
+                <div class="flex-1 h-px bg-gray-200 mt-5"></div>
+                <div class="flex-1 text-center">
+                    <div class="step-indicator w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-2">2</div>
+                    <p class="text-sm font-medium text-gray-500">Preferences</p>
+                </div>
+                <div class="flex-1 h-px bg-gray-200 mt-5"></div>
+                <div class="flex-1 text-center">
+                    <div class="step-indicator w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-2">3</div>
+                    <p class="text-sm font-medium text-gray-500">Review</p>
+                </div>
+                <div class="flex-1 h-px bg-gray-200 mt-5"></div>
+                <div class="flex-1 text-center">
+                    <div class="step-indicator w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-2">4</div>
+                    <p class="text-sm font-medium text-gray-500">Results</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-8 min-h-[500px] flex flex-col">
+
+            <div id="step-1" class="step active flex-1">
+                <h2 class="text-xl font-semibold mb-4 text-center">Upload Your Room Photo</h2>
+                <div id="image-preview-container" class="hidden w-full max-w-lg mx-auto text-center mb-4">
+                    <img id="image-preview" src="#" alt="Room preview" class="w-full h-auto max-h-80 object-contain rounded-lg shadow-md border border-gray-200">
+                    <button id="remove-image-btn" class="mt-2 text-sm text-red-600 hover:text-red-800">Remove Image</button>
+                </div>
+                <div id="file-drop-area" class="flex flex-col items-center justify-center w-full max-w-lg mx-auto h-80 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4V6a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 16v1a2 2 0 01-2 2H3a2 2 0 01-2-2V7a2 2 0 012-2h2m16 9v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"></path></svg>
+                    <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                    <p class="text-xs text-gray-500">PNG, JPG, or JPEG (MAX. 10MB)</p>
+                    <input id="file-input" type="file" class="hidden" accept="image/png, image/jpeg, image/jpg">
+                </div>
+                <div class="flex justify-between items-center mt-8">
+                    <button id="reset-btn" class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Reset</button>
+                    <button id="next-btn-1" class="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400" disabled>Next</button>
+                </div>
+            </div>
+
+            <div id="step-2" class="step">
+                <h2 class="text-xl font-semibold mb-4">Select Your Preferences</h2>
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="font-medium text-gray-800 mb-3">What room is this?</h3>
+                        <div id="room-types-container" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <p class="text-gray-500">Loading room types...</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-800 mb-3">Choose up to 4 styles:</h3>
+                        <div id="styles-container" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <p class="text-gray-500">Loading styles...</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-800 mb-3">Any color preferences? (Optional)</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <label class="block p-3 border rounded-lg hover:border-green-600 cursor-pointer transition-colors"><input type="checkbox" name="color_preference" value="warm" class="mr-2">Warm Tones (Reds, Oranges)</label>
+                            <label class="block p-3 border rounded-lg hover:border-green-600 cursor-pointer transition-colors"><input type="checkbox" name="color_preference" value="cool" class="mr-2">Cool Tones (Blues, Greens)</label>
+                            <label class="block p-3 border rounded-lg hover:border-green-600 cursor-pointer transition-colors"><input type="checkbox" name="color_preference" value="neutral" class="mr-2">Neutrals (White, Beige, Gray)</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mt-8">
+                    <button id="back-btn-2" class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Back</button>
+                    <button id="next-btn-2" class="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400" disabled>Next</button>
+                </div>
+            </div>
+            
+            <div id="step-3" class="step">
+                <h2 class="text-xl font-semibold mb-4 text-center">Review Your Selections</h2>
+                <div class="max-w-xl mx-auto flex flex-col md:flex-row gap-6">
+                    <div class="md:w-1/2">
+                        <p class="font-medium text-gray-800 mb-2">Your Room:</p>
+                        <img id="review-image" src="#" alt="Room preview" class="w-full h-auto object-contain rounded-lg shadow-md border border-gray-200">
+                    </div>
+                    <div class="md:w-1/2">
+                        <p class="font-medium text-gray-800 mb-2">Your Preferences:</p>
+                        <div id="review-preferences" class="space-y-2 text-gray-700">
+                            </div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mt-8 max-w-xl mx-auto">
+                    <button id="back-btn-3" class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Back</button>
+                    <button id="generate-btn" class="px-6 py-2 text-lg font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">Generate Designs!</button>
+                </div>
+            </div>
+
+            <div id="step-4" class="step flex-1 flex flex-col">
+                <h2 class="text-xl font-semibold mb-6 text-center">Your AI Redesigns</h2>
+                
+                <div id="loading-state" class="flex-1 flex flex-col items-center justify-center text-center p-8 hidden">
+                    <div class="w-16 h-16 border-4 border-t-green-600 border-gray-200 rounded-full animate-spin mb-4"></div>
+                    <p class="text-lg font-medium text-gray-700">Generating your designs...</p>
+                    <p class="text-gray-500">This may take up to 60 seconds. Please wait.</p>
+                </div>
+                
+                <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    </div>
+
+                <div id="results-footer-buttons" class="flex justify-center items-center mt-8 hidden">
+                    <button id="back-btn-4" class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 mr-4">Back to Review</button>
+                    <button id="start-over-btn" class="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">Start a New Redesign</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const state = {
+                currentStep: 1,
+                imageFile: null,
+                preferences: { room_type: null, styles: [], color_preferences: [] }
+            };
+            const steps = document.querySelectorAll('.step');
+            const stepIndicators = document.querySelectorAll('.step-indicator');
+            
+            const API_PREFIX = '/redesign';
+            
+            window.goToStep = (stepNumber) => {
+                state.currentStep = stepNumber;
+                updateUI();
+            };
+
+            const updateUI = () => {
+                steps.forEach((step, i) => step.classList.toggle('active', i + 1 === state.currentStep));
+                stepIndicators.forEach((indicator, i) => {
+                    const stepNum = i + 1;
+                    const p = indicator.nextElementSibling;
+                    indicator.classList.toggle('active', stepNum === state.currentStep);
+                    indicator.classList.toggle('completed', stepNum < state.currentStep);
+                    p.classList.toggle('text-gray-500', stepNum > state.currentStep);
+                    p.classList.toggle('text-green-800', stepNum <= state.currentStep);
+                    p.classList.toggle('font-medium', stepNum <= state.currentStep);
+                });
+                if (state.currentStep === 3) populateReview();
+            };
+            
+            ['next-btn-1', 'next-btn-2'].forEach((id, i) => document.getElementById(id).addEventListener('click', () => goToStep(i + 2)));
+            ['back-btn-2', 'back-btn-3', 'back-btn-4'].forEach((id, i) => document.getElementById(id).addEventListener('click', () => goToStep(i + 1)));
+            document.getElementById('start-over-btn').addEventListener('click', () => location.reload());
+
+            // --- Step 1: Upload ---
+            const fileDropArea = document.getElementById('file-drop-area'), fileInput = document.getElementById('file-input'), imagePreviewContainer = document.getElementById('image-preview-container'), imagePreview = document.getElementById('image-preview'), removeImageBtn = document.getElementById('remove-image-btn'), nextBtn1 = document.getElementById('next-btn-1');
+            fileDropArea.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => fileDropArea.addEventListener(e, p => { p.preventDefault(); p.stopPropagation(); }, false));
+            fileDropArea.addEventListener('dragenter', () => fileDropArea.classList.add('dragover'));
+            fileDropArea.addEventListener('dragleave', () => fileDropArea.classList.remove('dragover'));
+            fileDropArea.addEventListener('drop', (e) => { fileDropArea.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+            
+            function handleFile(file) {
+                if (!file || !file.type.startsWith('image/')) return;
+                state.imageFile = file;
+                const reader = new FileReader();
+                reader.onload = e => { imagePreview.src = e.target.result; imagePreviewContainer.classList.remove('hidden'); fileDropArea.classList.add('hidden'); nextBtn1.disabled = false; };
+                reader.readAsDataURL(file);
+            }
+            function resetUpload() { state.imageFile = null; fileInput.value = ''; imagePreview.src = '#'; imagePreviewContainer.classList.add('hidden'); fileDropArea.classList.remove('hidden'); nextBtn1.disabled = true; }
+            removeImageBtn.addEventListener('click', resetUpload);
+            document.getElementById('reset-btn').addEventListener('click', resetUpload);
+
+            // --- Step 2: Preferences ---
+            const stylesContainer = document.getElementById('styles-container'), roomTypesContainer = document.getElementById('room-types-container'), nextBtn2 = document.getElementById('next-btn-2');
+            
+            async function fetchPreferencesData() {
+                try {
+                    stylesContainer.innerHTML = '<p class="text-gray-500">Loading styles...</p>';
+                    roomTypesContainer.innerHTML = '<p class="text-gray-500">Loading room types...</p>';
+                    const [stylesRes, roomTypesRes] = await Promise.all([
+                        fetch(`${API_PREFIX}/api/styles`),
+                        fetch(`${API_PREFIX}/api/room-types`)
+                    ]);
+                    if (!stylesRes.ok || !roomTypesRes.ok) {
+                        throw new Error('Failed to load preference data from the server.');
+                    }
+                    const stylesData = await stylesRes.json();
+                    const roomTypesData = await roomTypesRes.json();
+                    stylesContainer.innerHTML = Object.entries(stylesData).map(([key, value]) => `<label class="block p-3 border rounded-lg hover:border-green-600 cursor-pointer transition-colors"><input type="checkbox" name="style" value="${key}" class="mr-2 text-green-600 focus:ring-green-500">${value.name}</label>`).join('');
+                    roomTypesContainer.innerHTML = roomTypesData.map(type => `<label class="block p-3 border rounded-lg hover:border-green-600 cursor-pointer transition-colors"><input type="radio" name="room_type" value="${type}" class="mr-2 text-green-600 focus:ring-green-500">${type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</label>`).join('');
+                    addPreferenceListeners();
+                } catch (error) {
+                    console.error("Failed to fetch preferences:", error);
+                    const errorMessage = `
+                        <div class="md:col-span-2 text-center text-red-600 bg-red-50 p-4 rounded-lg">
+                            <p class="font-semibold">Could not connect to the backend.</p>
+                            <p class="text-sm">Please make sure the server (Flask) is running and the blueprint routes exist under /redesign.</p>
+                            <button id="retry-fetch-btn" class="mt-2 px-4 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700">Retry</button>
+                        </div>`;
+                    stylesContainer.innerHTML = errorMessage;
+                    roomTypesContainer.innerHTML = '';
+                    document.getElementById('retry-fetch-btn').addEventListener('click', fetchPreferencesData);
+                }
+            }
+
+            function addPreferenceListeners() {
+                document.querySelectorAll('input[name="style"]').forEach(cb => cb.addEventListener('change', () => {
+                    const checked = Array.from(document.querySelectorAll('input[name="style"]:checked'));
+                    if (checked.length > 4) { cb.checked = false; alert("You can select a maximum of 4 styles."); }
+                    state.preferences.styles = Array.from(document.querySelectorAll('input[name="style"]:checked')).map(i => i.value);
+                    validatePreferences();
+                }));
+                document.querySelectorAll('input[name="room_type"]').forEach(rb => rb.addEventListener('change', () => { if (rb.checked) state.preferences.room_type = rb.value; validatePreferences(); }));
+                document.querySelectorAll('input[name="color_preference"]').forEach(cb => cb.addEventListener('change', () => { state.preferences.color_preferences = Array.from(document.querySelectorAll('input[name="color_preference"]:checked')).map(i => i.value); }));
+            }
+            function validatePreferences() { nextBtn2.disabled = !(state.preferences.room_type && state.preferences.styles.length > 0); }
+
+            // --- Step 3: Review ---
+            function populateReview() {
+                document.getElementById('review-image').src = imagePreview.src;
+                const reviewContainer = document.getElementById('review-preferences');
+                const { room_type, styles, color_preferences } = state.preferences;
+                const toTitleCase = str => str.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                reviewContainer.innerHTML = `<div><p><strong class="font-medium text-green-800">Room Type:</strong> ${toTitleCase(room_type || '')}</p><p><strong class="font-medium text-green-800">Styles:</strong> ${styles.map(toTitleCase).join(', ')}</p><p><strong class="font-medium text-green-800">Colors:</strong> ${color_preferences.length > 0 ? color_preferences.map(toTitleCase).join(', ') : 'None'}</p></div>`;
+            }
+            
+            // --- Step 4: Generation & Results ---
+            const generateBtn = document.getElementById('generate-btn');
+            const loadingState = document.getElementById('loading-state');
+            const resultsGrid = document.getElementById('results-grid');
+            const resultsFooterButtons = document.getElementById('results-footer-buttons'); // Get buttons div
+
+            generateBtn.addEventListener('click', async () => {
+                goToStep(4);
+                
+                // Show spinner, hide buttons
+                loadingState.classList.remove('hidden');
+                resultsGrid.innerHTML = '';
+                resultsFooterButtons.classList.add('hidden'); // Hide buttons on generate
+                
+                const formData = new FormData();
+                formData.append('image', state.imageFile);
+                formData.append('preferences', JSON.stringify(state.preferences));
+                
+                try {
+                    const response = await fetch(`${API_PREFIX}/api/generate`, { method: 'POST', body: formData });
+                    if (!response.ok) { 
+                        const err = await response.json().catch(() => ({ detail: 'server error' })); 
+                        throw new Error(err.detail || 'Failed to generate designs'); 
+                    }
+                    const results = await response.json();
+                    displayResults(results);
+                } catch (error) {
+                    console.error('Generation failed:', error);
+                    resultsGrid.innerHTML = `<p class="text-red-500 md:col-span-2 text-center">Error: ${error.message}. Please try again.</p>`;
+                } finally {
+                    // Hide spinner, show buttons
+                    loadingState.classList.add('hidden');
+                    resultsFooterButtons.classList.remove('hidden'); // Show buttons when done
+                }
+            });
+
+            function displayResults(results) {
+                if (!results || results.length === 0) {
+                    resultsGrid.innerHTML = `<p class="md:col-span-2 text-center text-gray-600">Sorry, we couldn't generate any designs. Please try adjusting your preferences.</p>`; 
+                    return;
+                }
+                resultsGrid.innerHTML = results.map(r => `
+                    <div class="border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white">
+                        <img src="${r.image_url}" alt="AI generated ${r.style} design" class="w-full h-64 object-cover">
+                        <div class="p-4">
+                            <p class="font-semibold text-green-800">${r.style.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+                            <p class="text-sm text-gray-500">AI-generated concept</p>
+                            <div class="flex items-center justify-between mt-4">
+                                <div class="flex items-center space-x-2">
+                                    <a href="${r.image_url}" download="interior_ai_design.png" class="px-3 py-1.5 text-sm font-semibold bg-gray-200 rounded-md hover:bg-gray-300">Download</a>
+                                    <button class="px-3 py-1.5 text-sm font-semibold bg-gray-200 rounded-md hover:bg-gray-300" onclick="alert('Share functionality coming soon!')">Share</button>
+                                </div>
+                                <button class="like-button p-2 rounded-full hover:bg-red-50" data-design-id="${r.design_id}">
+                                    <svg class="icon-stroked w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                                    <svg class="icon-filled w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>`).join('');
+                
+                document.querySelectorAll('.like-button').forEach(button => button.addEventListener('click', async () => {
+                    const designId = button.dataset.designId;
+                    try {
+                        const response = await fetch(`${API_PREFIX}/api/designs/${designId}/like`, { method: 'POST' });
+                        if (!response.ok) throw new Error('Could not update like status');
+                        const result = await response.json();
+                        button.classList.toggle('liked', result.liked);
+                        console.log(`Design ${designId} liked status: ${result.liked}`);
+                    } catch (error) {
+                        console.error('Failed to like design:', error);
+                    }
+                }));
+            }
+            
+            fetchPreferencesData();
+            updateUI();
+        });
+    </script>
+</main>
+{% endblock %}
