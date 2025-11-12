@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - DesignAI</title>
+    <!-- We're using the Inter font implicitly via the CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background:#f9fafb; 
+            display:flex; 
+            justify-content:center; 
+            align-items:center; 
+            min-height:100vh;
+            padding: 20px;
+        }
+        .signup-container { 
+            background:#fff; 
+            padding:30px; 
+            border-radius:12px; 
+            width:100%;
+            max-width:550px; 
+            box-shadow:0 4px 20px rgba(0,0,0,0.1);
+        }
+        h2, h3 { 
+            text-align:center; 
+            margin-bottom:10px; 
+        }
+        .step-subtitle {
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        
+        /* Progress Steps */
+        .progress-steps {
+            display: none;
+            margin-bottom: 30px;
+        }
+        .progress-steps.active {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        .progress-line {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #e5e7eb;
+            z-index: 0;
+        }
+        .progress-fill {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            height: 2px;
+            background: #10B981;
+            transition: width 0.3s ease;
+            z-index: 1;
+        }
+        .step-indicator {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            flex: 1;
+        }
+        .step-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #e5e7eb;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-bottom: 5px;
+        }
+        .step-indicator.active .step-circle {
+            border-color: #10B981;
+            background: #10B981;
+            color: #fff;
+        }
+        .step-indicator.completed .step-circle {
+            border-color: #10B981;
+            background: #10B981;
+            color: #fff;
+        }
+        .step-label {
+            font-size: 0.7rem;
+            color: #6b7280;
+        }
+        .step-indicator.active .step-label {
+            color: #10B981;
+            font-weight: 600;
+        }
+        
+        /* Form Steps */
+        .form-step {
+            display: none;
+        }
+        .form-step.active {
+            display: block;
+        }
+        
+        form div { 
+            margin-bottom:15px; 
+        }
+        label { 
+            display:block; 
+            margin-bottom:5px; 
+            font-weight:500; 
+        }
+        input[type="text"], 
+        input[type="email"], 
+        input[type="password"], 
+        input[type="tel"],
+        textarea,
+        select { 
+            width:100%; 
+            padding:10px; 
+            border:1px solid #d1d5db; 
+            border-radius:8px; 
+        }
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        small {
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+        
+        .radio-group { 
+            display:flex; 
+            gap:20px; 
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .radio-group input[type="radio"] {
+            margin-right: 8px;
+        }
+        
+        /* Checkbox Grid */
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .checkbox-item:hover {
+            border-color: #10B981;
+            background: #f0fdf4;
+        }
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 8px;
+            width: auto;
+        }
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 400;
+        }
+        
+        /* Form Grid */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        /* Buttons */
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn { 
+            flex: 1;
+            padding:12px; 
+            border:none; 
+            border-radius:8px; 
+            font-weight:600; 
+            cursor:pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background:#10B981; 
+            color:#fff;
+        }
+        .btn-primary:hover {
+            background: #059669;
+        }
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .required {
+            color: #ef4444;
+        }
+        
+        .section-label {
+            font-weight: 600;
+            color: #374151;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+        
+        /* Custom Message Box Styles */
+        .message-success {
+            padding: 12px; 
+            border-radius: 8px; 
+            margin-bottom: 10px; 
+            background: #d1fae5; 
+            color: #065f46; 
+            border: 1px solid #10B981;
+        }
+        .message-error {
+            padding: 12px; 
+            border-radius: 8px; 
+            margin-bottom: 10px; 
+            background: #fee2e2; 
+            color: #991b1b; 
+            border: 1px solid #ef4444;
+        }
+
+        @media (max-width: 600px) {
+            .checkbox-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="signup-container">
+    <h2>🏠 Create Your Account</h2>
+    
+    <!-- Client-side Message Container (Replaces Flask/Jinja flash messages) -->
+    <div id="message-box" style="display: none; margin-bottom: 20px;"></div>
+    
+    <!-- Progress Steps -->
+    <div class="progress-steps" id="progress-container">
+        <div class="progress-line"></div>
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        
+        <div class="step-indicator active" data-step="1">
+            <div class="step-circle">1</div>
+            <div class="step-label">Basic</div>
+        </div>
+        <div class="step-indicator" data-step="2">
+            <div class="step-circle">2</div>
+            <div class="step-label">Property</div>
+        </div>
+        <div class="step-indicator" data-step="3">
+            <div class="step-circle">3</div>
+            <div class="step-label">Project</div>
+        </div>
+        <div class="step-indicator" data-step="4">
+            <div class="step-circle">4</div>
+            <div class="step-label">Style</div>
+        </div>
+        <div class="step-indicator" data-step="5">
+            <div class="step-circle">5</div>
+            <div class="step-label">Vision</div>
+        </div>
+    </div>
+    
+    <form id="signup-form" method="POST" action="/signup">
+        
+        <!-- STEP 1: Basic Info -->
+        <div class="form-step active" data-step="1">
+            <h3>Step 1: Basic Info</h3>
+            <p class="step-subtitle">Let's start with the essentials</p>
+            
+            <div>
+                <label for="role">I am a:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="role" value="user" required> Homeowner</label>
+                    <label><input type="radio" name="role" value="designer" required> Designer</label>
+                </div>
+            </div>
+
+            <div id="homeowner-fields" style="display:none;">
+                <div>
+                    <label for="name">Full Name: <span class="required">*</span></label>
+                    <input type="text" name="name" id="name" placeholder="Enter your full name">
+                </div>
+
+                <div>
+                    <label for="email">Email Address: <span class="required">*</span></label>
+                    <input type="email" name="email" id="email" placeholder="your@email.com">
+                </div>
+
+                <div>
+                    <label for="password">Password: <span class="required">*</span></label>
+                    <input type="password" name="password" id="password" placeholder="Create a secure password">
+                </div>
+
+                <div>
+                    <label for="phone">Phone Number: <span class="required">*</span></label>
+                    <input type="tel" name="phone" id="phone" placeholder="+91 98765 43210">
+                </div>
+
+                <div class="form-buttons">
+                    <button type="button" class="btn btn-primary" onclick="validateAndNext(1)">Continue</button>
+                </div>
+            </div>
+
+            <div id="designer-redirect" style="display:none; text-align:center; padding: 20px;">
+                <p style="color: #6b7280; margin-bottom: 15px;">Designer signup is handled separately with a comprehensive 5-step process.</p>
+                <!-- This link should ideally point to the actual designer signup path if separate -->
+                <a href="/designer-signup" class="btn btn-primary" style="display:inline-block; text-decoration:none;">Continue as Designer</a>
+            </div>
+        </div>
+
+        <!-- STEP 2: Property Details -->
+        <div class="form-step" data-step="2">
+            <h3>Step 2: Property Details</h3>
+            <p class="step-subtitle">Tell us about your space</p>
+            
+            <div>
+                <label for="location">Location/City: <span class="required">*</span></label>
+                <input type="text" name="location" id="location" placeholder="e.g., Mumbai, Bangalore, Delhi">
+            </div>
+
+            <div>
+                <label for="property_type">Property Type: <span class="required">*</span></label>
+                <select name="property_type" id="property_type">
+                    <option value="">Select property type</option>
+                    <option value="Apartment">Apartment</option>
+                    <option value="Villa">Villa</option>
+                    <option value="Studio">Studio</option>
+                    <option value="Independent House">Independent House</option>
+                    <option value="Penthouse">Penthouse</option>
+                    <option value="Duplex">Duplex</option>
+                </select>
+            </div>
+
+            <div class="form-grid">
+                <div>
+                    <label for="room_count">Number of Rooms: <span class="required">*</span></label>
+                    <select name="room_count" id="room_count">
+                        <option value="">Select</option>
+                        <option value="1 BHK">1 BHK</option>
+                        <option value="2 BHK">2 BHK</option>
+                        <option value="3 BHK">3 BHK</option>
+                        <option value="4 BHK">4 BHK</option>
+                        <option value="5+ BHK">5+ BHK</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="budget">Budget (₹): <span class="required">*</span></label>
+                    <select name="budget" id="budget">
+                        <option value="">Select budget</option>
+                        <option value="Under 5L">Under ₹5 Lakhs</option>
+                        <option value="5L-10L">₹5-10 Lakhs</option>
+                        <option value="10L-20L">₹10-20 Lakhs</option>
+                        <option value="20L-50L">₹20-50 Lakhs</option>
+                        <option value="50L+">₹50 Lakhs+</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label for="timeline">Project Timeline: <span class="required">*</span></label>
+                <select name="timeline" id="timeline">
+                    <option value="">Select timeline</option>
+                    <option value="Immediately">Immediately (1-2 months)</option>
+                    <option value="3 months">Within 3 months</option>
+                    <option value="6 months">Within 6 months</option>
+                    <option value="Next year">Next year</option>
+                    <option value="Just exploring">Just exploring ideas</option>
+                </select>
+            </div>
+
+            <div class="form-buttons">
+                <button type="button" class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button type="button" class="btn btn-primary" onclick="validateAndNext(2)">Continue</button>
+            </div>
+        </div>
+
+        <!-- STEP 3: Project Type -->
+        <div class="form-step" data-step="3">
+            <h3>Step 3: Project Type</h3>
+            <p class="step-subtitle">Which rooms or spaces would you like designed?</p>
+            
+            <div class="checkbox-grid">
+                <div class="checkbox-item">
+                    <input type="checkbox" name="project_rooms" value="Living Room" id="room1">
+                    <label for="room1">🛋️ Living Room</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="project_rooms" value="Bedroom" id="room2">
+                    <label for="room2">🛏️ Bedroom</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="project_rooms" value="Kitchen" id="room3">
+                    <label for="room3">🍳 Kitchen</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="project_rooms" value="Bathroom" id="room4">
+                    <label for="room4">🚿 Bathroom</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="project_rooms" value="Balcony" id="room5">
+                    <label for="room5">🌿 Balcony</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="project_rooms" value="Study/Office" id="room6">
+                    <label for="room6">📚 Study/Office</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="project_rooms" value="Dining Room" id="room7">
+                    <label for="room7">🍽️ Dining Room</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="project_rooms" value="Others" id="room8">
+                    <label for="room8">✨ Others</label>
+                </div>
+            </div>
+
+            <div id="other-room-input" style="display:none; margin-top:10px;">
+                <label for="other_rooms">Specify other rooms:</label>
+                <input type="text" name="other_rooms" id="other_rooms" placeholder="e.g., Pooja Room, Home Theater">
+            </div>
+
+            <div class="form-buttons">
+                <button type="button" class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button type="button" class="btn btn-primary" onclick="validateAndNext(3)">Continue</button>
+            </div>
+        </div>
+
+        <!-- STEP 4: Design Preferences -->
+        <div class="form-step" data-step="4">
+            <h3>Step 4: Design Preferences</h3>
+            <p class="step-subtitle">Help us understand your personal taste</p>
+            
+            <label>Favorite Styles (Select 3 or more): <span class="required">*</span></label>
+            <div class="checkbox-grid">
+                <div class="checkbox-item">
+                    <input type="checkbox" name="favorite_styles" value="Minimalist" id="style1">
+                    <label for="style1">Minimalist</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="favorite_styles" value="Modern" id="style2">
+                    <label for="style2">Modern</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="favorite_styles" value="Scandinavian" id="style3">
+                    <label for="style3">Scandinavian</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="favorite_styles" value="Bohemian" id="style4">
+                    <label for="style4">Bohemian</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="favorite_styles" value="Industrial" id="style5">
+                    <label for="style5">Industrial</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="favorite_styles" value="Classic/Traditional" id="style6">
+                    <label for="style6">Classic/Traditional</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="favorite_styles" value="Contemporary" id="style7">
+                    <label for="style7">Contemporary</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="favorite_styles" value="Rustic" id="style8">
+                    <label for="style8">Rustic</label>
+                </div>
+            </div>
+
+            <div class="form-buttons">
+                <button type="button" class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button type="button" class="btn btn-primary" onclick="validateAndNext(4)">Continue</button>
+            </div>
+        </div>
+
+        <!-- STEP 5: Design Direction & Lifestyle -->
+        <div class="form-step" data-step="5">
+            <h3>Step 5: Your Design Vision</h3>
+            <p class="step-subtitle">Optional but highly recommended for personalized results</p>
+            
+            <div class="section-label">A. Design Goals</div>
+            <div class="checkbox-grid">
+                <div class="checkbox-item">
+                    <input type="checkbox" name="design_goals" value="Aesthetic Makeover" id="goal1">
+                    <label for="goal1">Aesthetic Makeover</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="design_goals" value="Functional Optimization" id="goal2">
+                    <label for="goal2">Functional Optimization</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="design_goals" value="Complete Renovation" id="goal3">
+                    <label for="goal3">Complete Renovation</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="design_goals" value="Eco-friendly Living" id="goal4">
+                    <label for="goal4">Eco-friendly Living</label>
+                </div>
+            </div>
+
+            <div class="section-label">B. Lifestyle & Mood</div>
+            <div class="checkbox-grid">
+                <div class="checkbox-item">
+                    <input type="checkbox" name="lifestyle_mood" value="Cozy & Warm" id="mood1">
+                    <label for="mood1">Cozy & Warm</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="lifestyle_mood" value="Luxurious & Elegant" id="mood2">
+                    <label for="mood2">Luxurious & Elegant</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="lifestyle_mood" value="Minimal & Clean" id="mood3">
+                    <label for="mood3">Minimal & Clean</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="lifestyle_mood" value="Vibrant & Playful" id="mood4">
+                    <label for="mood4">Vibrant & Playful</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="lifestyle_mood" value="Nature-Inspired" id="mood5">
+                    <label for="mood5">Nature-Inspired</label>
+                </div>
+            </div>
+
+            <div class="section-label">C. Preferred Color Palette</div>
+            <div class="checkbox-grid">
+                <div class="checkbox-item">
+                    <input type="checkbox" name="color_palette" value="Neutral" id="color1">
+                    <label for="color1">Neutral (white, beige, grey)</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="color_palette" value="Earthy" id="color2">
+                    <label for="color2">Earthy (brown, terracotta)</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="color_palette" value="Cool" id="color3">
+                    <label for="color3">Cool (blue, green)</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="color_palette" value="Warm" id="color4">
+                    <label for="color4">Warm (yellow, orange, red)</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="color_palette" value="Monochrome" id="color5">
+                    <label for="color5">Monochrome (black & white)</label>
+                </div>
+            </div>
+
+            <div class="section-label">D. Furniture & Material Preferences</div>
+            <div class="checkbox-grid">
+                <div class="checkbox-item">
+                    <input type="checkbox" name="materials" value="Wood & Rattan" id="mat1">
+                    <label for="mat1">Wood & Rattan</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="materials" value="Marble & Stone" id="mat2">
+                    <label for="mat2">Marble & Stone</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="materials" value="Metal Accents" id="mat3">
+                    <label for="mat3">Metal Accents</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="materials" value="Glass Elements" id="mat4">
+                    <label for="mat4">Glass Elements</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" name="materials" value="Sustainable Materials" id="mat5">
+                    <label for="mat5">Sustainable Materials</label>
+                </div>
+            </div>
+
+            <div class="section-label">E. Inspirations (Optional)</div>
+            <div>
+                <label for="dream_home">Describe your dream home vision:</label>
+                <textarea name="dream_home" id="dream_home" placeholder="How should your home look and feel? Any specific inspirations or ideas?" rows="4"></textarea>
+                <small>This helps us generate personalized AI design prompts for you</small>
+            </div>
+
+            <div class="form-buttons">
+                <button type="button" class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button type="submit" class="btn btn-primary">Complete Signup 🎉</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<script>
+let currentStep = 1;
+const maxSteps = 5;
+
+// Function to display non-blocking messages (replaces alert())
+function showMessage(message, isSuccess = false) {
+    const msgBox = document.getElementById('message-box');
+    msgBox.textContent = message;
+    msgBox.className = isSuccess ? 'message-success' : 'message-error';
+    msgBox.style.display = 'block';
+
+    // Auto-hide the message after 5 seconds
+    setTimeout(() => {
+        msgBox.style.display = 'none';
+    }, 5000);
+}
+
+// Role selection handler
+document.querySelectorAll('input[name="role"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        if (e.target.value === 'user') {
+            document.getElementById('homeowner-fields').style.display = 'block';
+            document.getElementById('designer-redirect').style.display = 'none';
+            document.getElementById('progress-container').classList.add('active');
+        } else {
+            // Designer flow (redirect is shown, steps are bypassed)
+            document.getElementById('homeowner-fields').style.display = 'none';
+            document.getElementById('designer-redirect').style.display = 'block';
+            document.getElementById('progress-container').classList.remove('active');
+        }
+    });
+});
+
+// Show "Others" input when checked
+document.getElementById('room8').addEventListener('change', (e) => {
+    document.getElementById('other-room-input').style.display = e.target.checked ? 'block' : 'none';
+});
+
+function validateAndNext(step) {
+    if (step === 1) {
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        
+        // Basic required field validation for Step 1
+        if (!name || !email || !password || !phone) {
+            showMessage('Please fill in all required fields (Name, Email, Password, Phone).');
+            return;
+        }
+    }
+    
+    if (step === 2) {
+        const location = document.getElementById('location').value.trim();
+        const property = document.getElementById('property_type').value;
+        const rooms = document.getElementById('room_count').value;
+        const budget = document.getElementById('budget').value;
+        const timeline = document.getElementById('timeline').value;
+        
+        // Basic required field validation for Step 2
+        if (!location || !property || !rooms || !budget || !timeline) {
+            showMessage('Please fill in all required property details.');
+            return;
+        }
+    }
+    
+    if (step === 3) {
+        const checked = document.querySelectorAll('input[name="project_rooms"]:checked');
+        if (checked.length === 0) {
+            showMessage('Please select at least one room for your project.');
+            return;
+        }
+    }
+    
+    if (step === 4) {
+        const checked = document.querySelectorAll('input[name="favorite_styles"]:checked');
+        if (checked.length < 3) {
+            showMessage('Please select at least 3 favorite styles to continue to the final step.');
+            return;
+        }
+    }
+    
+    // If validation passes, move to the next step
+    nextStep();
+}
+
+function nextStep() {
+    if (currentStep < maxSteps) {
+        document.querySelector('.form-step.active').classList.remove('active');
+        currentStep++;
+        document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.add('active');
+        updateProgress();
+        window.scrollTo(0, 0); // Scroll to top for new step
+    }
+}
+
+function prevStep() {
+    if (currentStep > 1) {
+        document.querySelector('.form-step.active').classList.remove('active');
+        currentStep--;
+        document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.add('active');
+        updateProgress();
+        window.scrollTo(0, 0); // Scroll to top for previous step
+    }
+}
+
+function updateProgress() {
+    document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+        const stepNum = index + 1;
+        if (stepNum < currentStep) {
+            indicator.classList.add('completed');
+            indicator.classList.remove('active');
+        } else if (stepNum === currentStep) {
+            indicator.classList.add('active');
+            indicator.classList.remove('completed');
+        } else {
+            indicator.classList.remove('active', 'completed');
+        }
+    });
+    
+    // Calculate progress based on steps completed (0% for step 1, 100% for step 5)
+    const progressPercent = ((currentStep - 1) / (maxSteps - 1)) * 100;
+    document.getElementById('progress-fill').style.width = progressPercent + '%';
+}
+
+// Initial call to hide the message box on load (and handle the initial state)
+document.addEventListener('DOMContentLoaded', () => {
+    // Hide message box explicitly if it wasn't hidden by inline style
+    document.getElementById('message-box').style.display = 'none';
+
+    // If the progress bar is active (meaning 'user' is the default assumption), update its state.
+    if (document.getElementById('progress-container').classList.contains('active')) {
+        updateProgress();
+    }
+});
+</script>
+
+</body>
+</html>

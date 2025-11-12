@@ -350,72 +350,88 @@ def designer_profile():
         # Corrected redirect: use the defined 'dashboard' route
         return redirect(url_for("dashboard"))
     
+# @# app.py (Route for POST /designer/profile/update)
+
+# ... (other imports and routes remain unchanged) ...
+
 @app.route("/designer/profile/update", methods=["POST"])
 @login_required 
 def update_designer_profile():
     """
-    Handles the POST request to update the designer's data in the database.
+    Handles the POST request to update the designer's data for the fields 
+    present in the profile editor form (portfolio_designer.html).
     """
     user_id = session.get("user", {}).get("id")
     
-    if not user_id:
+    # Security check: Ensure the user is a designer
+    if session.get("user", {}).get("role") != "designer":
+        flash("Authorization failed. Please log in as a designer.", "danger")
         return redirect(url_for("login_designer"))
 
-    # 1. Collect updated data from the form
+    # 1. Initialize payload and safely handle integer conversion
     update_payload = {
+        "designer_name": request.form.get("name"), 
         "specialisation": request.form.get("specialisation"),
         "studio_name": request.form.get("studio_name"),
-        # ⚠️ IMPORTANT: Convert to integer for database consistency
-        "years_experience": int(request.form.get("years_experience")) if request.form.get("years_experience") else None, 
+        "years_experience": None, 
         "portfolio_url": request.form.get("portfolio_url"),
         "bio": request.form.get("bio"),
-        "design_styles": request.form.getlist("design_styles"), 
-        # Add other fields you want to be editable:
-        "phone": request.form.get("phone"),
-        "location": request.form.get("location"),
-        "cities_served": [city.strip() for city in request.form.get("cities_served", "").split(',') if city.strip()],
-        "certifications": request.form.get("certifications"),
-        "awards": request.form.get("awards"),
-        "room_specializations": request.form.getlist("room_types"),
-        "material_preferences": request.form.getlist("materials") or None,
-        "color_palette_preferences": request.form.getlist("color_palettes") or None,
-        # Integer fields that might be empty from the form need conversion:
-        "budget_range_min": int(request.form.get("budget_min")) if request.form.get("budget_min") else None,
-        "budget_range_max": int(request.form.get("budget_max")) if request.form.get("budget_max") else None,
-        "typical_project_size_sqft": int(request.form.get("project_size")) if request.form.get("project_size") else None,
-        "typical_project_rooms": int(request.form.get("project_rooms")) if request.form.get("project_rooms") else None,
-        "max_simultaneous_projects": int(request.form.get("max_projects")) if request.form.get("max_projects") else None,
-        "average_project_duration": request.form.get("project_duration"), # String field
-        "availability_schedule": request.form.get("availability"), # String field
-        "extra_services": request.form.getlist("extra_services") or None,
-        "preferred_communication": request.form.getlist("communication") or None,
+        "design_styles": request.form.getlist("design_styles") or None, 
     }
 
-    # Filter out None values before updating the database
-    update_payload = {k: v for k, v in update_payload.items() if v is not None}
-    
-    # Remove empty string values for fields that accept nulls if empty
-    for key, value in list(update_payload.items()):
-        if isinstance(value, str) and not value.strip():
-            update_payload[key] = None
+    try:
+        # Safely convert years_experience
+        years_exp_str = request.form.get("years_experience")
+        if years_exp_str and years_exp_str.strip():
+            update_payload['years_experience'] = int(years_exp_str)
+    except ValueError:
+        flash("Years of Experience must be a valid number.", "error")
+        return redirect(url_for("designer_profile"))
 
+    # 2. Filter out empty values for the database update
+    final_payload = {}
+    for k, v in update_payload.items():
+        if isinstance(v, str):
+            # If string is empty/whitespace, set to None for database NULL
+            if v.strip():
+                final_payload[k] = v
+            else:
+                final_payload[k] = None
+        elif v is not None:
+            # Include arrays (lists) and non-string/non-None values (like integers)
+            final_payload[k] = v
+
+    # Remove the designer_name field if it's read-only and identical to the session data
+    # This prevents errors if RLS or DB constraints block updates on read-only fields.
+    if final_payload.get("designer_name") and final_payload["designer_name"] == session.get("user", {}).get("name"):
+        del final_payload["designer_name"]
+
+    if not final_payload:
+        flash("No changes detected.", "warning")
+        return redirect(url_for("designer_profile"))
 
     try:
-        # 2. Update the record in the 'designers' table where id matches the session user
-        update_response = supabase.table("designers").update(update_payload).eq("id", user_id).execute()
+        # 3. Update the record in the 'designers' table using the Supabase client
+        update_response = supabase.table("designers").update(final_payload).eq("id", user_id).execute()
         
-        if update_response.data:
-            flash("Profile successfully updated! 🎉", "success")
-        else:
-            flash("Profile not updated. Data was the same or an issue occurred.", "warning")
+        # --- ROBUST ERROR CHECKING ---
+        # 1. Check if the response object itself has an error attribute and if it's truthy
+        if hasattr(update_response, 'error') and update_response.error:
+             # Raise the error to be caught by the outer except block
+             raise Exception(update_response.error)
+        
+        # 2. If no explicit error is found, assume success.
+        flash("Profile successfully updated! 🎉", "success")
 
     except Exception as e:
-        print(f"Database error during profile update: {e}")
-        flash("Database error during profile update. Check your input types (e.g., ensure fields meant for numbers are actually numbers).", "error")
+        # This catches Supabase APIError, network issues, and the custom error raised above.
+        print(f"Database error during profile update for user {user_id}: {e}")
+        # Display the specific error message to the user for debugging
+        flash(f"Database update failed. Error: {e}", "error")
 
-    # 3. Redirect back to the profile page to show the updated data and flash message
-    return redirect(url_for("designer_profile"))
-
+    # Redirect back to the profile page to refresh the data
+    # return redirect(url_for("designer_profile"))
+    return redirect(url_for("dashboard"))
 
 if __name__ == "__main__":
     app.run(debug=True)
