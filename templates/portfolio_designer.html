@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -278,3 +279,79 @@
 </div>
 </body>
 </html>
+=======
+<div class="profile-container">
+    <h2>Edit Profile & Portfolio</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="flash-message {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('update_designer_profile') }}"> 
+
+        <div class="form-section">
+            <h3>Basic Information (Frozen)</h3>
+            
+            <div>
+                <label for="name">Full Name:</label>
+                <input type="text" name="name" id="name" value="{{ designer.name }}" readonly>
+            </div>
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" name="email" id="email" value="{{ designer.email }}" readonly>
+            </div>
+            
+            <input type="hidden" name="user_id" value="{{ designer.id }}">
+        </div>
+
+        <div class="form-section">
+            <h3>Professional Details</h3>
+            
+            <div>
+                <label for="specialisation">Primary Specialisation:</label>
+                <select name="specialisation" id="specialisation">
+                    <option value="{{ designer.specialisation }}" selected>{{ designer.specialisation }} (Current)</option>
+                    <option value="Residential">Residential</option>
+                    <option value="Commercial">Commercial</option>
+                    </select>
+            </div>
+            
+            <div>
+                <label for="studio_name">Studio Name (Optional):</label>
+                <input type="text" name="studio_name" id="studio_name" value="{{ designer.studio_name or '' }}">
+            </div>
+            
+            <div>
+                <label for="years_experience">Years of Experience:</label>
+                <input type="number" name="years_experience" id="years_experience" value="{{ designer.years_experience }}">
+            </div>
+            </div>
+
+        <div class="form-section">
+            <h3>Design Preferences</h3>
+            <label>Primary Design Styles:</label>
+            <div class="checkbox-grid">
+                <div><input type="checkbox" name="design_styles" value="Modern" {% if 'Modern' in designer.design_styles %}checked{% endif %}> <label>Modern</label></div>
+                </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Portfolio & Bio</h3>
+            <div>
+                <label for="portfolio_url">Portfolio Website:</label>
+                <input type="text" name="portfolio_url" id="portfolio_url" value="{{ designer.portfolio_url or '' }}">
+            </div>
+            <div>
+                <label for="bio">Professional Bio:</label>
+                <textarea name="bio" id="bio" rows="4">{{ designer.bio or '' }}</textarea>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+</div>
+>>>>>>> origin/sandhika
