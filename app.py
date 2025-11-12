@@ -6,7 +6,11 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 from supabase.lib.client_options import ClientOptions as SyncClientOptions 
 from functools import wraps
-
+from flask import Flask, render_template, session, redirect, url_for, flash
+from datetime import datetime
+import calendar
+import uuid
+from supabase import create_client, Client
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -49,7 +53,7 @@ def index():
     return render_template("index.html")
 
 # ----------- SIGNUP -----------
-@app.route("/signup", methods=["GET", "POST"])
+
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
@@ -298,40 +302,162 @@ def preferences():
     # This route is very long, but remains unchanged from your provided code.
     pass
 
+
+
+
+
+
+
+@app.template_filter('datetimeformat')
+def datetimeformat(value):
+    """Convert ISO or timestamp into human-readable date"""
+    try:
+        return datetime.fromisoformat(value).strftime("%b %d, %Y")
+    except Exception:
+        return value or "N/A"
+
+
+
+
 @app.route("/dashboard")
 def dashboard():
-    # ... (dashboard logic) ...
     if "user" not in session:
         flash("You must be logged in to view the dashboard.", "warning")
         return redirect(url_for("index"))
 
     user = session["user"]
+    email = user["email"].strip().lower()
+    role = user["role"]
 
-    if user["role"] == "user":
-        # Fetch user-specific data, like preferences or projects
-        user_preferences = []
+    if role == "designer":
         try:
-            res = supabase.table("user_preferences").select("preferences").eq("email", user["email"]).limit(1).execute()
-            user_preferences = res.data[0].get("preferences", []) if res.data else []
-        except:
-            user_preferences = ["No preferences set yet."]
+            print("\n===== 🧭 DASHBOARD DEBUG INFO =====")
+            print(f"Logged-in designer email: {email}")
+            print("====================================")
 
-        return render_template("dashboard_user.html", user=user, preferences=user_preferences)
-        
-    elif user["role"] == "designer":
-        # Fetch designer-specific data, like profile or active projects
-        designer_profile = {}
-        try:
-            res = supabase.table("designers").select("*").eq("email", user["email"]).limit(1).execute()
-            designer_profile = res.data[0] if res.data else {"bio": "Profile data not fully loaded."}
-        except:
-            designer_profile = {"bio": "Profile data not fully loaded or database error."}
-            
-        return render_template("dashboard_designer.html", user=user, profile=designer_profile)
-        
+            # Fetch designer record
+            designer_res = (
+                supabase.table("designers")
+                .select("*")
+                .filter("email", "eq", email)
+                .limit(1)
+                .execute()
+            )
+            designer = designer_res.data[0] if designer_res.data else None
+            if not designer:
+                flash("Designer not found.", "danger")
+                print(f"❌ No designer found for: {email}")
+                return redirect(url_for("index"))
+
+            print(f"✅ Designer found: {designer.get('designer_name', 'Unknown')}")
+
+            # ---------- PORTFOLIO ----------
+            portfolio_res = (
+                supabase.table("designer_portfolio")
+                .select("*")
+                .filter("designer_email", "eq", email)
+                .execute()
+            )
+            portfolio = portfolio_res.data or []
+            print(f"📂 Portfolio fetched: {len(portfolio)} items")
+
+            # ---------- REVIEWS ----------
+            review_res = (
+                supabase.table("designer_reviews")
+                .select("*")
+                .filter("designer_email", "eq", email)
+                .execute()
+            )
+            reviews = review_res.data or []
+            avg_rating = round(sum([r["rating"] for r in reviews]) / len(reviews), 1) if reviews else 0
+            total_reviews = len(reviews)
+            print(f"⭐ Reviews fetched: {total_reviews} (Avg Rating: {avg_rating})")
+
+            # ---------- BOOKINGS ----------
+            booking_res = (
+                supabase.table("designer_bookings")
+                .select("*")
+                .filter("designer_email", "eq", email)
+                .execute()
+            )
+            bookings = booking_res.data or []
+            print(f"📅 Bookings fetched: {len(bookings)}")
+
+            # ---------- CALCULATIONS ----------
+            total_projects = len(portfolio)
+            now = datetime.now()
+            current_month = calendar.month_abbr[now.month]
+
+            monthly_bookings = len([
+                b for b in bookings
+                if b.get("created_at") and b["created_at"][:7] == now.strftime("%Y-%m")
+            ])
+
+            # ---------- EARNINGS ----------
+            total_earnings = 0
+            pending_earnings = 0
+            for b in bookings:
+                notes = b.get("notes", "")
+                digits = "".join([c for c in notes if c.isdigit()])
+                amount = int(digits) if digits else 0
+
+                status = b.get("booking_status", "").lower()
+                if status in ["confirmed", "completed"]:
+                    total_earnings += amount
+                elif status == "pending":
+                    pending_earnings += amount
+
+            print(f"💰 Total Earnings: ₹{total_earnings:,} | Pending: ₹{pending_earnings:,}")
+
+            # ---------- UPCOMING SCHEDULE ----------
+            upcoming_schedule = sorted(
+                [b for b in bookings if b.get("booking_date")],
+                key=lambda x: x["booking_date"]
+            )[:3]
+            print(f"📆 Upcoming Meetings: {len(upcoming_schedule)}")
+
+            # ---------- POPULAR STYLES ----------
+            style_count = {}
+            for p in portfolio:
+                style = p.get("design_style")
+                if style:
+                    style_count[style] = style_count.get(style, 0) + 1
+
+            total_styles = sum(style_count.values())
+            popular_styles = [
+                {"style": s, "percent": round((c / total_styles) * 100, 1)}
+                for s, c in sorted(style_count.items(), key=lambda x: x[1], reverse=True)
+            ] if total_styles else []
+            print(f"🎨 Popular Styles Found: {len(popular_styles)}")
+
+            # ---------- RENDER DASHBOARD ----------
+            return render_template(
+                "dashboard_designer.html",
+                user=user,
+                designer=designer,
+                portfolio=portfolio,
+                avg_rating=avg_rating,
+                total_reviews=total_reviews,
+                total_projects=total_projects,
+                monthly_bookings=monthly_bookings,
+                upcoming_schedule=upcoming_schedule,
+                total_earnings=total_earnings,
+                pending_earnings=pending_earnings,
+                popular_styles=popular_styles,
+                current_month=current_month,
+            )
+
+        except Exception as e:
+            print("❌ DASHBOARD ERROR TRACEBACK:", e)
+            flash("Error loading dashboard data.", "danger")
+            return redirect(url_for("index"))
+
     else:
-        flash("Unknown role.", "danger")
+        flash("Access denied. Invalid role.", "danger")
         return redirect(url_for("index"))
+
+
+
 
 @app.route("/logout")
 def logout():
