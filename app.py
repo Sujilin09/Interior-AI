@@ -1,6 +1,6 @@
 # ...existing code...
 import os
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import hashlib
 import httpx
 from supabase import create_client, Client
@@ -652,6 +652,137 @@ def update_designer_profile():
     # 3. Redirect back to the profile page to show the updated data and flash message
     return redirect(url_for("designer_profile"))
 
+
+# ... (add this near your other routes, like user_dashboard)
+
+@app.route("/browse_designers")
+@login_required
+def browse_designers():
+    """
+    Renders the page showing all designers.
+    """
+    user = session["user"]
+    user_id = user["id"] # This is the UUID from user_profiles
+
+    try:
+        # 1. Fetch all designers from the database
+        designers_res = supabase.table("designers").select("*").execute()
+        all_designers = designers_res.data or []
+
+        # 2. Fetch this user's existing favorites
+        favorites_res = supabase.table("saved_favorites").select("designer_id").eq("user_id", user_id).execute()
+        
+        # 3. Create a simple set of IDs for easy checking in the template
+        liked_designer_ids = {f["designer_id"] for f in (favorites_res.data or [])}
+
+        print(f"Found {len(all_designers)} designers.")
+        print(f"User likes {len(liked_designer_ids)} designers.")
+
+        return render_template(
+            "browse_designers.html", 
+            user=user, 
+            all_designers=all_designers,
+            liked_designer_ids=liked_designer_ids
+        )
+
+    except Exception as e:
+        print(f"ERROR fetching designers: {e}")
+        flash("Could not load designers page.", "danger")
+        return redirect(url_for("user_dashboard"))
+
+
+# The route MUST have <string:designer_id> because it's a UUID
+@app.route("/api/designer/<string:designer_id>/like", methods=["POST"])
+@login_required
+def like_designer(designer_id):
+    
+    user = session["user"]
+    user_id = user["id"] # This is the user's UUID
+    
+    try:
+        # This query now works (UUID == UUID and UUID == UUID)
+        existing_like = supabase.table("saved_favorites") \
+            .select("id") \
+            .eq("user_id", user_id) \
+            .eq("designer_id", designer_id) \
+            .execute()
+
+        if existing_like.data:
+            # It exists, so UN-like (DELETE)
+            supabase.table("saved_favorites").delete().eq("id", existing_like.data[0]["id"]).execute()
+            print(f"User {user_id} UN-liked designer {designer_id}")
+            return jsonify({"status": "unliked", "designer_id": designer_id})
+        
+        else:
+            # It does not exist, so LIKE (INSERT)
+            new_like = {
+                "user_id": user_id,       # This is a UUID
+                "designer_id": designer_id  # This is also a UUID (as a string)
+            }
+            # This insert will now work
+            supabase.table("saved_favorites").insert(new_like).execute()
+            print(f"User {user_id} LIKED designer {designer_id}")
+            return jsonify({"status": "liked", "designer_id": designer_id})
+
+    except Exception as e:
+        # The REAL error will be printed in your terminal
+        print(f"ERROR LIKING DESIGNER: {e}") 
+        return jsonify({"error": str(e)}), 500
+
+# ... (add this with your other @app.route functions)
+
+@app.route("/saved_favorites")
+@login_required
+def saved_favorites():
+    """
+    Renders the page showing BOTH saved designers and saved AI designs.
+    """
+    user = session["user"]
+    user_id = user["id"]
+    
+    all_favorites = []
+
+    try:
+        # 1. Fetch Saved Designers
+        designers_res = supabase.table("saved_favorites") \
+            .select("designer_id, designers(*)") \
+            .eq("user_id", user_id) \
+            .execute()
+
+        for f in (designers_res.data or []):
+            if f.get("designers"):
+                designer_data = f["designers"]
+                designer_data["favorite_type"] = "designer" # Add a type
+                # Get the 'created_at' from the join table to allow sorting
+                designer_data["saved_at"] = f.get("created_at", "1970-01-01T00:00:00Z")
+                all_favorites.append(designer_data)
+
+        # 2. Fetch Saved AI Designs
+        ai_designs_res = supabase.table("saved_ai_designs") \
+            .select("*") \
+            .eq("user_id", user_id) \
+            .execute()
+        
+        for d in (ai_designs_res.data or []):
+            d["favorite_type"] = "ai_image" # Add a type
+            d["saved_at"] = d.get("created_at", "1970-01-01T00:00:00Z")
+            all_favorites.append(d)
+        
+        # 3. Sort all favorites by creation/saved date, newest first
+        all_favorites.sort(key=lambda x: x["saved_at"], reverse=True)
+
+        print(f"User {user_id} has {len(all_favorites)} total saved items.")
+
+        return render_template(
+            "saved_favorites.html",
+            user=user,
+            all_favorites=all_favorites
+        )
+
+    except Exception as e:
+        print(f"ERROR fetching all favorites: {e}")
+        flash("Could not load your saved favorites.", "danger")
+        return redirect(url_for("user_dashboard"))
 
 if __name__ == "__main__":
     app.run(debug=True)

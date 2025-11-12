@@ -16,6 +16,9 @@ from enum import Enum
 from typing import Dict, List, Optional
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import quote
+from supabase import create_client, Client
+from supabase.lib.client_options import ClientOptions as SyncClientOptions
+import httpx
 
 from dotenv import load_dotenv
 # --- MODIFICATION: Import session, redirect, url_for, and flash ---
@@ -28,6 +31,12 @@ from pydantic import BaseModel, Field, ValidationError
 warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 
 load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+http_client = httpx.Client(verify=False)
+options = SyncClientOptions(httpx_client=http_client)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY, options=options)
 
 # ===========================
 # FLASK BLUEPRINT SETUP
@@ -489,21 +498,48 @@ def generate_room_designs():
 
 @redesign_bp.route("/api/designs/<string:design_id>/like", methods=['POST'])
 def like_design(design_id: str):
-    """Toggle like status"""
+    """Toggle like status and save to Supabase."""
+
     if "user" not in session:
         return jsonify({"detail": "Authentication required."}), 401
-        
-    if design_id not in DESIGN_DATABASE:
-        return jsonify({"detail": "Design not found"}), 404
-    
-    current_status = DESIGN_DATABASE[design_id].get("liked", False)
-    DESIGN_DATABASE[design_id]["liked"] = not current_status
-    
-    return jsonify({
-        "design_id": design_id, 
-        "liked": DESIGN_DATABASE[design_id]["liked"]
-    })
 
+    user = session["user"]
+    user_id = user["id"]
+
+    # Find the design in our temporary database
+    design_data = DESIGN_DATABASE.get(design_id)
+    if not design_data:
+        return jsonify({"detail": "Design not found or app was restarted."}), 404
+
+    try:
+        # Check if it's already liked in the database
+        existing_like = supabase.table("saved_ai_designs") \
+            .select("id") \
+            .eq("user_id", user_id) \
+            .eq("design_id", design_id) \
+            .execute()
+
+        if existing_like.data:
+            # UN-like (DELETE)
+            supabase.table("saved_ai_designs").delete().eq("id", existing_like.data[0]["id"]).execute()
+            print(f"User {user_id} UN-liked AI design {design_id}")
+            return jsonify({"status": "unliked", "design_id": design_id, "liked": False})
+
+        else:
+            # LIKE (INSERT)
+            new_like = {
+                "user_id": user_id,
+                "design_id": design_data["design_id"],
+                "style": design_data["style"],
+                "image_url": design_data["image_url"]
+            }
+            supabase.table("saved_ai_designs").insert(new_like).execute()
+            print(f"User {user_id} LIKED AI design {design_id}")
+            return jsonify({"status": "liked", "design_id": design_id, "liked": True})
+
+    except Exception as e:
+        print(f"ERROR LIKING AI DESIGN: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @redesign_bp.route("/api/styles", methods=['GET'])
 def get_available_styles():
