@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Designer Profile</title>
+
+    <style>
+        /* --- Base Container & Typography --- */
+        .profile-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 30px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            font-family: Arial, sans-serif;
+        }
+
+        .profile-container h2 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* --- Form Structure & Sections --- */
+        .form-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+        }
+
+        .form-section h3 {
+            color: #444;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.25em;
+        }
+
+        .frozen-info input[readonly] {
+            background-color: #f7f7ff;
+            cursor: not-allowed;
+            color: #888;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        /* --- Input Fields --- */
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        input[type="url"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; 
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* --- Checkbox Grid Styling (Design Styles) --- */
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #f9f9f9;
+            user-select: none;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked + label {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked {
+            accent-color: #007bff;
+        }
+
+        .checkbox-item label {
+            flex-grow: 1;
+            margin: 0;
+            padding-left: 5px;
+            cursor: pointer;
+        }
+
+        /* --- Action Button --- */
+        .form-actions {
+            text-align: right;
+            margin-top: 30px;
+        }
+
+        .btn-primary {
+            background-color: #28a745; 
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 17px;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        .btn-primary:hover {
+            background-color: #218838;
+        }
+
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+
+        /* --- Flash Messages --- */
+        .flash-messages-container {
+            margin-bottom: 20px;
+        }
+
+        .flash-message {
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error, .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+    </head>
+<body>
+<div class="profile-container">
+    <h2>Edit Profile & Portfolio</h2>
+
+    {# Display Flash Messages (Success or Error) #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages-container">
+        {% for category, message in messages %}
+        <div class="flash-message alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('update_designer_profile') }}" class="designer-profile-form"> 
+
+        {# Basic Information (Frozen) #}
+        <section class="form-section frozen-info">
+            <h3>Basic Information (Frozen) 🔒</h3>
+            
+            <div class="form-group">
+                <label for="name">Full Name:</label>
+                <input type="text" name="name" id="name" value="{{ designer.designer_name | default('Name Not Found') }}">
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" name="email" id="email" value="{{ designer.email | default('') }}" readonly>
+            </div>
+            
+            <input type="hidden" name="user_id" value="{{ designer.id }}">
+        </section>
+
+        <hr>
+
+        {# Professional Details #}
+        <section class="form-section professional-details">
+            <h3>Professional Details 💼</h3>
+            
+            <div class="form-group">
+                <label for="specialisation">Primary Specialisation:</label>
+                <select name="specialisation" id="specialisation" required>
+                    <option value="{{ designer.specialisation | default('') }}" selected>{{ designer.specialisation | default('Select Specialisation') }} (Current)</option>
+                    <option value="Residential">Residential</option>
+                    <option value="Commercial">Commercial</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="studio_name">Studio Name (Optional):</label>
+                <input type="text" name="studio_name" id="studio_name" value="{{ designer.studio_name | default('') }}" placeholder="e.g., [Your Name] Interiors">
+            </div>
+            
+            <div class="form-group">
+                <label for="years_experience">Years of Experience:</label>
+                <input type="number" name="years_experience" id="years_experience" value="{{ designer.years_experience | default(0) }}" min="0" required>
+            </div>
+        </section>
+
+        <hr>
+
+        {# Design Preferences - Expanded Checkbox Grid #}
+        <section class="form-section design-preferences">
+            <h3>Design Preferences 🎨</h3>
+            <label>Primary Design Styles (Select all that apply):</label>
+            <div class="checkbox-grid">
+                {% set all_styles = ['Modern', 'Traditional', 'Minimalist', 'Industrial', 'Bohemian', 'Scandinavian', 'Mid-Century Modern', 'Coastal', 'Farmhouse', 'Rustic'] %}
+                
+                {% set current_styles = designer.design_styles or [] %}
+
+                {% for style in all_styles %}
+                <div class="checkbox-item">
+                    <input type="checkbox" name="design_styles" id="style_{{ loop.index }}" value="{{ style }}" 
+                        {% if style in current_styles %}checked{% endif %}> 
+                    <label for="style_{{ loop.index }}">{{ style }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <hr>
+
+        {# Portfolio & Bio #}
+        <section class="form-section portfolio-bio">
+            <h3>Portfolio & Bio 🌐</h3>
+            <div class="form-group">
+                <label for="portfolio_url">Portfolio Website:</label>
+                <input type="url" name="portfolio_url" id="portfolio_url" value="{{ designer.portfolio_url | default('') }}" placeholder="https://yourportfolio.com">
+            </div>
+            <div class="form-group">
+                <label for="bio">Professional Bio:</label>
+                <textarea name="bio" id="bio" rows="6" placeholder="Tell clients about your experience, philosophy, and expertise.">{{ designer.bio | default('') }}</textarea>
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>
