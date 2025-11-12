@@ -6,52 +6,36 @@
 <style>
     /* --- NEW MASONRY GRID --- */
     .favorites-grid-masonry {
-        /* Define columns for a "Pinterest" style layout */
-        column-count: 3; /* Default to 3 columns */
-        column-gap: 1.5rem; /* Space between columns */
-        
-        /* This is for the "empty" message */
+        column-count: 3; 
+        column-gap: 1.5rem; 
         position: relative;
     }
 
     .favorite-card {
-        /* This is the magic part: stops cards from breaking in half */
         break-inside: avoid; 
-        
-        /* Standard card stuff */
         position: relative;
-        display: inline-block; /* Required for columns */
+        display: inline-block; 
         width: 100%;
-        margin-bottom: 1.5rem; /* Space below each card */
-        
-        /* Re-adding base card styles from your main CSS */
+        margin-bottom: 1.5rem; 
         background: #fff;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         overflow: hidden; 
-        box-sizing: border-box; /* Good practice */
+        box-sizing: border-box;
     }
     
-    /* Responsive: 2 columns for tablets */
     @media (max-width: 1024px) {
         .favorites-grid-masonry {
             column-count: 2;
         }
     }
-
-    /* Responsive: 1 column for mobile */
     @media (max-width: 640px) {
         .favorites-grid-masonry {
             column-count: 1;
         }
     }
     
-    /* --- END NEW MASONRY --- */
-
-
     /* --- CARD-SPECIFIC STYLES --- */
-
-    /* Designer Card: Needs padding */
     .designer-card {
         padding: 1.5rem;
     }
@@ -80,27 +64,26 @@
     .designer-meta p { margin: 0.25rem 0; color: #555; }
 
 
-    /* AI Design Card: Image height is now auto! */
+    /* AI Design Card */
     .ai-design-card .result-image {
         width: 100%;
-        height: auto; /* Let the image define its height */
-        overflow: hidden;
+        height: auto; 
     }
     .ai-design-card .result-image img {
         width: 100%;
         height: auto;
-        display: block; /* Fixes potential bottom-margin issues */
+        display: block; 
         object-fit: cover;
     }
     .ai-design-card .result-info {
-        padding: 1rem; /* Add padding to match designer card */
+        padding: 1rem;
     }
     .ai-design-card .btn-secondary {
         margin: 0 1rem 1rem 1rem;
-        width: calc(100% - 2rem); /* Adjust button width */
+        width: calc(100% - 2rem);
     }
 
-    /* Like Button (Unchanged from your code) */
+    /* Like Button */
     .like-button {
         position: absolute;
         top: 1rem;
@@ -115,7 +98,7 @@
         justify-content: center;
         cursor: pointer;
         transition: all 0.2s ease;
-        z-index: 2; /* Make sure it's on top */
+        z-index: 2;
     }
     .like-button i {
         font-size: 24px;
@@ -168,13 +151,15 @@
                         <p><i class='bx bx-map'></i> {{ item.location | default('Not specified') }}</p>
                         <p><i class='bx bx-rupee'></i> 
                             {% if item.budget_range_min %}
-                                ₹{{ item.budget_range_min }} - ₹{{ item.budget_range_max }}
+                                Rs.{{ item.budget_range_min }} - Rs.{{ item.budget_range_max }}
                             {% else %}
                                 Budget not set
                             {% endif %}
                         </p>
                     </div>
-                    <button class="btn-secondary full-width">View Portfolio</button>
+                    <a href="{{ url_for('view_designer', designer_id=item.id) }}" class="btn-secondary full-width" style="text-decoration: none; text-align: center;">
+                        View Portfolio
+                    </a>
                 </div>
 
                 {% elif item.favorite_type == 'ai_image' %}

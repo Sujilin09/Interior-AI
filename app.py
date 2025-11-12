@@ -784,5 +784,52 @@ def saved_favorites():
         flash("Could not load your saved favorites.", "danger")
         return redirect(url_for("user_dashboard"))
 
+@app.route("/designer/<string:designer_id>")
+@login_required
+def view_designer(designer_id):
+    """
+    Shows a public-facing portfolio page for a single designer.
+    """
+    user = session["user"] # For the layout
+
+    try:
+        # 1. Fetch the designer's main profile
+        designer_res = supabase.table("designers") \
+            .select("*") \
+            .eq("id", designer_id) \
+            .limit(1) \
+            .execute()
+
+        if not designer_res.data:
+            flash("Sorry, that designer could not be found.", "danger")
+            return redirect(request.referrer or url_for("user_dashboard"))
+
+        designer = designer_res.data[0]
+
+        # 2. Fetch all portfolio projects for that designer
+        portfolio_res = supabase.table("designer_portfolio") \
+            .select("*") \
+            .eq("designer_id", designer_id) \
+            .order("uploaded_at", desc=True) \
+            .execute()
+            
+        portfolio_projects = portfolio_res.data or []
+
+        print(f"Viewing profile for {designer['designer_name']}")
+        print(f"Found {len(portfolio_projects)} portfolio projects.")
+
+        # 3. Render the new template
+        return render_template(
+            "designer_portfolio_public.html",
+            user=user,
+            designer=designer,
+            portfolio_projects=portfolio_projects
+        )
+
+    except Exception as e:
+        print(f"ERROR viewing designer profile: {e}")
+        flash("An error occurred while trying to load that profile.", "danger")
+        return redirect(url_for("user_dashboard"))
+    
 if __name__ == "__main__":
     app.run(debug=True)
