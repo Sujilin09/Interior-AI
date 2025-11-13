@@ -263,11 +263,6 @@
 </head>
 <body>
 
-<<<<<<< HEAD
-
-<!-- Flash Message Container -->
-=======
->>>>>>> origin/sandhika
 <div id="flash-message" class="flash-message"></div>
 
 <div class="signup-container">
@@ -325,90 +320,6 @@
                 <input type="password" name="password" id="password" required>
             </div>
 
-<<<<<<< HEAD
-            <form id="homeownerForm" method="POST" action="/signup">
-            <input type="hidden" name="role" value="user">
-
-            <!-- Step 1 -->
-            <div class="step active" id="h-step1">
-                <label>Name</label>
-                <input type="text" name="name" required>
-
-                <label>Email</label>
-                <input type="email" name="email" required>
-
-                <label>Password</label>
-                <input type="password" name="password" required>
-
-                <label>Phone</label>
-                <input type="text" name="phone" required>
-
-                <button type="button" class="btn" onclick="nextHomeStep(2)">Next</button>
-            </div>
-
-            <!-- Step 2 -->
-            <div class="step" id="h-step2">
-                <label>Location</label>
-                <input type="text" name="location" required>
-
-                <label>Property Type</label>
-                <select name="property_type" required>
-                    <option value="">Select Type</option>
-                    <option>Apartment</option>
-                    <option>Villa</option>
-                    <option>Studio</option>
-                    <option>Duplex</option>
-                </select>
-
-                <label>Number of Rooms</label>
-                <input type="number" name="rooms" min="1" required>
-
-                <label>Budget (₹)</label>
-                <input type="number" name="budget" required>
-
-                <label>Timeline (months)</label>
-                <input type="text" name="timeline" placeholder="e.g., 3 months" required>
-
-                <button type="button" class="btn" onclick="nextHomeStep(3)">Next</button>
-            </div>
-
-            <!-- Step 3 -->
-            <div class="step" id="h-step3">
-                <label>What rooms/areas do you want to design?</label>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" name="project_rooms" value="Living Room"> Living Room</label>
-                    <label><input type="checkbox" name="project_rooms" value="Bedroom"> Bedroom</label>
-                    <label><input type="checkbox" name="project_rooms" value="Kitchen"> Kitchen</label>
-                    <label><input type="checkbox" name="project_rooms" value="Bathroom"> Bathroom</label>
-                    <label><input type="checkbox" name="project_rooms" value="Balcony"> Balcony</label>
-                    <label><input type="checkbox" name="project_rooms" value="Full House"> Full House</label>
-                </div>
-                <button type="button" class="btn" onclick="nextHomeStep(4)">Next</button>
-            </div>
-
-            <!-- Step 4 -->
-            <div class="step" id="h-step4">
-                <label>Select your favorite design styles (min 3)</label>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" name="preferences" value="Modern"> Modern</label>
-                    <label><input type="checkbox" name="preferences" value="Minimalist"> Minimalist</label>
-                    <label><input type="checkbox" name="preferences" value="Rustic"> Rustic</label>
-                    <label><input type="checkbox" name="preferences" value="Bohemian"> Bohemian</label>
-                    <label><input type="checkbox" name="preferences" value="Industrial"> Industrial</label>
-                    <label><input type="checkbox" name="preferences" value="Scandinavian"> Scandinavian</label>
-                    <label><input type="checkbox" name="preferences" value="Traditional"> Traditional</label>
-                </div>
-
-                <button type="submit" class="btn">Submit</button>
-            </div>
-        </form>
-          
-
-
-
-            <!-- Designer Additional Fields (Step 1) -->
-=======
->>>>>>> origin/sandhika
             <div class="designer-only">
             <div>
                 <label for="specialisation">Primary Specialisation: <span class="required">*</span></label>
@@ -819,36 +730,6 @@
 
 <script>
 let currentStep = 1;
-
-
-const homeownerBtn = document.getElementById("homeownerBtn");
-        const designerBtn = document.getElementById("designerBtn");
-        const homeownerForm = document.getElementById("homeownerForm");
-        const designerForm = document.getElementById("designerForm");
-
-        // Role toggle
-        homeownerBtn.addEventListener("click", () => {
-            homeownerBtn.classList.add("active");
-            designerBtn.classList.remove("active");
-            homeownerForm.classList.remove("hidden");
-            designerForm.classList.add("hidden");
-        });
-
-        designerBtn.addEventListener("click", () => {
-            designerBtn.classList.add("active");
-            homeownerBtn.classList.remove("active");
-            designerForm.classList.remove("hidden");
-            homeownerForm.classList.add("hidden");
-        });
-
-        // Homeowner step navigation
-        function nextHomeStep(step) {
-            document.querySelectorAll("#homeownerForm .step").forEach(s => s.classList.remove("active"));
-            document.getElementById(`h-step${step}`).classList.add("active");
-        }
-
-
-// let currentStep = 1;
 let isDesigner = false;
 
 // Function to display the custom flash message and handle optional redirect
@@ -1009,17 +890,21 @@ function validateHomeownerStep() {
 
 
 function handleContinue() {
-    if (!validateStep(1)) {
-        return;
-    }
-    // 1. COLLECT STEP 1 DATA
-    const role = document.querySelector('input[name="role"]:checked').value;
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value; // Get raw password to submit
+    if (!validateStep(1)) return;
 
-    // 2. INJECT AS HIDDEN FIELDS INTO THE HOMEOWNER STEP
-    const hiddenDataContainer = document.getElementById('hidden-homeowner-data');
+    const role = document.querySelector('input[name="role"]:checked').value;
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    // Always preserve Step-1 data in hidden inputs for final POST
+    let hiddenDataContainer = document.getElementById('hidden-data');
+    if (!hiddenDataContainer) {
+        hiddenDataContainer = document.createElement('div');
+        hiddenDataContainer.id = 'hidden-data';
+        document.getElementById('signup-form').appendChild(hiddenDataContainer);
+    }
+
     hiddenDataContainer.innerHTML = `
         <input type="hidden" name="role" value="${role}">
         <input type="hidden" name="name" value="${name}">
@@ -1027,21 +912,18 @@ function handleContinue() {
         <input type="hidden" name="password" value="${password}">
     `;
 
-    // 3. TRANSITION SCREEN
-    document.querySelector(`.form-step[data-step="1"]`).classList.remove('active');
-    
-    if (isDesigner) {
-        // DESIGNER FLOW: Proceed to Step 2
-        currentStep = 2; 
-        document.querySelector(`.form-step[data-step="2"]`).classList.add('active');
+    // Hide step 1 and show next
+    document.querySelector('.form-step[data-step="1"]').classList.remove('active');
+
+    if (role === 'designer') {
+        isDesigner = true;
+        currentStep = 2;
+        document.querySelector('.form-step[data-step="2"]').classList.add('active');
         updateProgress();
     } else {
-        // HOMEOWNER FLOW: Proceed to the dedicated Homeowner Step
-        const homeownerStep = document.getElementById('homeowner-step');
-        if (homeownerStep) {
-            homeownerStep.classList.add('active');
-        }
+        document.getElementById('homeowner-step').classList.add('active');
     }
+
     window.scrollTo(0, 0);
 }
 
@@ -1108,16 +990,11 @@ function handleSubmit() {
     }
     const form = document.getElementById('signup-form');
     
-
-        showMessage('Designer registration submitted successfully! Redirecting to designer login...', true);
-        form.submit();
-
    form.action = "/signup"; 
     form.method = "POST";
     
     // Submit the form
     form.submit();
-
 }
 
 function updateProgress() {

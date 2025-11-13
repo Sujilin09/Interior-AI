@@ -1,0 +1,280 @@
+/* 🌿 DesignAI Light Dashboard Theme for Designer Dashboard */
+
+body {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  background-color: #f9fafb;
+  color: #1a202c;
+}
+
+/* 🧭 Top Navigation Bar */
+/* .top-nav {
+  background-color: #ffffff;
+  color: #2d3748;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 30px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.top-nav .logo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2b6cb0;
+}
+
+.top-nav a {
+  color: #4a5568;
+  text-decoration: none;
+  margin-right: 20px;
+  font-weight: 500;
+}
+
+.top-nav a:hover {
+  color: #2b6cb0;
+}
+
+.top-nav .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+} */
+
+/* 🧱 Sidebar */
+.sidebar {
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  width: 230px;
+  height: 100vh;
+  position: fixed;
+  top: 60px;
+  left: 0;
+  padding: 25px 20px;
+}
+
+.sidebar h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 25px;
+}
+
+.sidebar a {
+  color: #4a5568;
+  text-decoration: none;
+  display: block;
+  padding: 10px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease-in-out;
+  font-weight: 500;
+}
+
+.sidebar a:hover {
+  background-color: #edf2f7;
+  color: #2b6cb0;
+}
+
+.sidebar a.active {
+  background-color: #e6f0fa;
+  color: #2b6cb0;
+  font-weight: 600;
+}
+
+/* 🖥️ Main Content */
+.main-content {
+  margin-left: 260px;
+  padding: 40px;
+  background-color: #f9fafb;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.header h1 {
+  font-size: 1.6rem;
+  color: #2d3748;
+  font-weight: 600;
+}
+
+/* 💠 Card Base */
+.card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 20px 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 30px;
+}
+
+/* 📊 Performance Overview Cards */
+.performance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.metric-card {
+  background-color: #ffffff;
+  border: 1px solid #edf2f7;
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  transition: 0.3s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
+}
+
+.metric-card h3 {
+  margin: 8px 0;
+  font-size: 1.8rem;
+  color: #2b6cb0;
+  font-weight: 600;
+}
+
+.metric-card small {
+  color: #718096;
+}
+
+/* 🖼️ Portfolio Grid */
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-top: 15px;
+}
+
+.portfolio-item {
+  background-color: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: 0.3s ease;
+  border: 1px solid #edf2f7;
+}
+
+.portfolio-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.portfolio-item img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+
+.portfolio-item p {
+  font-weight: 600;
+  color: #2d3748;
+  margin: 10px 10px 5px;
+}
+
+.portfolio-item small {
+  color: #718096;
+  margin-left: 10px;
+}
+
+/* 🟩 Buttons */
+.btn-green {
+  background-color: #2b6cb0;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.btn-green:hover {
+  background-color: #265a8f;
+}
+
+.btn-dark {
+  background-color: #2d3748;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* 🪟 Modal Styling */
+#addProjectModal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+}
+
+#addProjectModal > div {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  width: 420px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+#addProjectModal input,
+#addProjectModal textarea {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 12px;
+  font-family: inherit;
+}
+
+#closeModal {
+  background-color: #a0aec0;
+  color: white;
+}
+
+#closeModal:hover {
+  background-color: #718096;
+}
+
+/* 📈 Layout Sections */
+.main-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+}
+
+/* 📅 Market Insights & Client Requests */
+.badge.active {
+  background-color: #3182ce;
+  color: white;
+}
+
+.badge.pending {
+  background-color: #f6ad55;
+  color: white;
+}
+
+.badge.completed {
+  background-color: #48bb78;
+  color: white;
+}
+
+/* 🌐 Scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
