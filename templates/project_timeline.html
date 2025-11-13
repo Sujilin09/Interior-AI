@@ -1,0 +1,156 @@
+{% extends "layout.html" %}
+
+{% block title %}Project Timeline – DesignAI{% endblock %}
+
+{% block head %}
+<style>
+    .timeline-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .timeline-input input {
+        padding: 0.8rem 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        width: 100%;
+        margin-bottom: 1.5rem;
+    }
+    .timeline-results {
+        margin-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 1.5rem;
+    }
+    .phase-item {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        border-left: 4px solid #059669; /* Primary Color Accent */
+        background-color: #f0fdf4; /* Light green background */
+        border-radius: 4px;
+        position: relative;
+    }
+    .phase-name {
+        font-weight: 700;
+        color: #059669;
+        font-size: 1.1rem;
+    }
+    .phase-dates {
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+    }
+    .phase-details {
+        margin-top: 0.5rem;
+        font-size: 0.95rem;
+    }
+    .total-summary {
+        text-align: center;
+        padding: 1rem;
+        background: #e0f2f1;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="main-content">
+    <section style="margin-top:0;">
+        <div class="section-header">
+            <h3>Project Timeline</h3>
+        </div>
+
+        <div class="timeline-card">
+            <div class="timeline-input">
+                <label for="startDate">Select Project Start Date</label>
+                <input type="date" id="startDate" required>
+                <button id="generateTimelineBtn" class="btn btn-secondary full-width">Generate Detailed Timeline</button>
+            </div>
+
+            <div id="timelineResults" class="timeline-results" style="display:none;">
+                
+                <div class="total-summary">
+                    <h4>Estimated Project Completion: <strong id="completionDate">Loading...</strong></h4>
+                    <p>Total Estimated Duration: <span id="totalDays"></span> days.</p>
+                </div>
+
+                <h4>Project Phases</h4>
+                <div id="phasesContainer">
+                    </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+document.getElementById('generateTimelineBtn').addEventListener('click', async function() {
+    const startDate = document.getElementById('startDate').value;
+    if (!startDate) {
+        alert("Please select a project start date.");
+        return;
+    }
+
+    const btn = this;
+    const resultsDiv = document.getElementById('timelineResults');
+    const phasesContainer = document.getElementById('phasesContainer');
+    
+    btn.disabled = true;
+    btn.textContent = "Calculating...";
+    resultsDiv.style.display = 'none';
+
+    try {
+        // NOTE: You need to pull the existing budget data for this user here.
+        // For demonstration, we'll use placeholder data based on your screenshot (2BHK, 2000 sq.ft., Minimal, Basic).
+        // In a real application, you would fetch the last saved estimate from Supabase.
+        const PLACEHOLDER_DATA = {
+            start_date: startDate,
+            area: 2000,
+            home_type: "2BHK",
+            style: "Minimal",
+            material: "Basic"
+        };
+        
+        const response = await fetch('/api/timeline_generate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(PLACEHOLDER_DATA)
+        });
+
+        const data = await response.json();
+        if (!data.success) {
+            alert("Failed to generate timeline: " + data.error);
+            return;
+        }
+
+        const timeline = data.timeline;
+
+        // Update Summary
+        document.getElementById('completionDate').textContent = timeline.end_date;
+        document.getElementById('totalDays').textContent = timeline.total_project_days;
+        
+        // Populate Phases
+        phasesContainer.innerHTML = '';
+        timeline.phases.forEach(phase => {
+            phasesContainer.innerHTML += `
+                <div class="phase-item">
+                    <div class="phase-name">${phase.name} (${phase.duration_weeks} Weeks)</div>
+                    <div class="phase-dates">Start: ${phase.start_date} | End: ${phase.end_date}</div>
+                    <div class="phase-details">${phase.details}</div>
+                </div>
+            `;
+        });
+        
+        resultsDiv.style.display = 'block';
+
+    } catch (err) {
+        console.error(err);
+        alert("An error occurred while generating the timeline.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Generate Detailed Timeline";
+    }
+});
+</script>
+{% endblock %}

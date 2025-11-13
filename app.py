@@ -1,4 +1,5 @@
 # ...existing code...
+from urllib.parse import quote
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import hashlib
@@ -8,12 +9,12 @@ from dotenv import load_dotenv
 from supabase.lib.client_options import ClientOptions as SyncClientOptions 
 from functools import wraps
 from flask import Flask, render_template, session, redirect, url_for, flash
-from datetime import datetime
+from datetime import datetime, timedelta 
 import calendar
 import uuid
 from supabase import create_client, Client
 from redesign_app import redesign_bp
-
+import requests
 
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -330,49 +331,69 @@ def dashboard():
     
     user = session["user"]
     
+    # Security Check: If a 'user' lands here, send them to their correct dashboard.
     if user["role"] != "designer":
         flash("Access denied. Redirecting to your dashboard.", "warning")
         return redirect(url_for("user_dashboard"))
 
-    designer_id = user["id"]
+    # --- From here, it's ONLY designer logic ---
     email = user["email"].strip().lower()
+    role = user["role"]
 
     try:
         print("\n===== DASHBOARD DEBUG INFO (DESIGNER) =====")
-        print(f"Logged-in designer ID: {designer_id}")
-        
-        designer_res = supabase.table("designers").select("*").eq("id", designer_id).limit(1).execute()
-        
-        if not designer_res.data:
+        print(f"Logged-in designer email: {email}")
+        print("====================================")
+
+        # Fetch designer record
+        designer_res = (
+            supabase.table("designers")
+            .select("*")
+            .filter("email", "eq", email)
+            .limit(1)
+            .execute()
+        )
+        designer = designer_res.data[0] if designer_res.data else None
+        if not designer:
             flash("Designer not found.", "danger")
+            print(f"No designer found for: {email}")
             return redirect(url_for("index"))
 
-        designer = designer_res.data[0]
         print(f"Designer found: {designer.get('designer_name', 'Unknown')}")
 
-        # --- PORTFOLIO (Fixed to use ID) ---
-        portfolio_res = supabase.table("designer_portfolio").select("*").eq("designer_id", designer_id).execute()
+        # ---------- PORTFOLIO ----------
+        portfolio_res = (
+            supabase.table("designer_portfolio")
+            .select("*")
+            .filter("designer_email", "eq", email)
+            .execute()
+        )
         portfolio = portfolio_res.data or []
         print(f"Portfolio fetched: {len(portfolio)} items")
 
-        # --- REVIEWS (Fixed to use ID) ---
-        review_res = supabase.table("designer_reviews").select("*").eq("designer_id", designer_id).execute()
+        # ---------- REVIEWS ----------
+        review_res = (
+            supabase.table("designer_reviews")
+            .select("*")
+            .filter("designer_email", "eq", email)
+            .execute()
+        )
         reviews = review_res.data or []
         avg_rating = round(sum([r["rating"] for r in reviews]) / len(reviews), 1) if reviews else 0
         total_reviews = len(reviews)
         print(f"Reviews fetched: {total_reviews} (Avg Rating: {avg_rating})")
 
-        # --- BOOKINGS (Fixed to use ID and new table) ---
-        booking_res = supabase.table("designer_bookings") \
-            .select("*") \
-            .eq("designer_id", designer_id) \
-            .order("booking_date", desc=True) \
+        # ---------- BOOKINGS ----------
+        booking_res = (
+            supabase.table("designer_bookings")
+            .select("*")
+            .filter("designer_email", "eq", email)
             .execute()
-            
+        )
         bookings = booking_res.data or []
         print(f"Bookings fetched: {len(bookings)}")
 
-        # ... (rest of your calculations for earnings, etc.) ...
+        # ---------- CALCULATIONS ----------
         total_projects = len(portfolio)
         now = datetime.now()
         current_month = calendar.month_abbr[now.month]
@@ -382,30 +403,36 @@ def dashboard():
             if b.get("created_at") and b["created_at"][:7] == now.strftime("%Y-%m")
         ])
 
+        # ---------- EARNINGS ----------
         total_earnings = 0
         pending_earnings = 0
         for b in bookings:
             notes = b.get("notes", "")
             digits = "".join([c for c in notes if c.isdigit()])
             amount = int(digits) if digits else 0
+
             status = b.get("booking_status", "").lower()
             if status in ["confirmed", "completed"]:
                 total_earnings += amount
             elif status == "pending":
                 pending_earnings += amount
+
         print(f"Total Earnings: Rs.{total_earnings:,} | Pending: Rs.{pending_earnings:,}")
 
+        # ---------- UPCOMING SCHEDULE ----------
         upcoming_schedule = sorted(
             [b for b in bookings if b.get("booking_date")],
             key=lambda x: x["booking_date"]
         )[:3]
         print(f"Upcoming Meetings: {len(upcoming_schedule)}")
 
+        # ---------- POPULAR STYLES ----------
         style_count = {}
         for p in portfolio:
             style = p.get("design_style")
             if style:
                 style_count[style] = style_count.get(style, 0) + 1
+
         total_styles = sum(style_count.values())
         popular_styles = [
             {"style": s, "percent": round((c / total_styles) * 100, 1)}
@@ -413,7 +440,7 @@ def dashboard():
         ] if total_styles else []
         print(f"Popular Styles Found: {len(popular_styles)}")
 
-
+        # ---------- RENDER DESIGNER DASHBOARD ----------
         return render_template(
             "dashboard_designer.html",
             user=user,
@@ -423,7 +450,7 @@ def dashboard():
             total_reviews=total_reviews,
             total_projects=total_projects,
             monthly_bookings=monthly_bookings,
-            upcoming_schedule=upcoming_schedule, # This list is now correct
+            upcoming_schedule=upcoming_schedule,
             total_earnings=total_earnings,
             pending_earnings=pending_earnings,
             popular_styles=popular_styles,
@@ -434,6 +461,7 @@ def dashboard():
         print("DASHBOARD ERROR TRACEBACK:", e)
         flash("Error loading dashboard data.", "danger")
         return redirect(url_for("index"))
+
 
 # --- *** NEW ROUTE *** ---
 # --- THIS IS THE USER (HOMEOWNER) DASHBOARD ---
@@ -756,174 +784,242 @@ def saved_favorites():
         print(f"ERROR fetching all favorites: {e}")
         flash("Could not load your saved favorites.", "danger")
         return redirect(url_for("user_dashboard"))
+    
+# ---------- Budget Estimator API (FINAL) ----------
 
-@app.route("/designer/<string:designer_id>")
+
+@app.route("/budget_estimator", methods=["GET"])
 @login_required
-def view_designer(designer_id):
-    """
-    Shows a public-facing portfolio page for a single designer.
-    """
-    user = session["user"] # For the layout
+def budget_estimator_page():
+    user = session["user"]
+    return render_template("budget_estimator.html", user=user)
 
+@app.route("/api/estimate_generate", methods=["POST"])
+@login_required
+def estimate_generate():
+    import json
+    import google.generativeai as genai
+    import os
+    from urllib.parse import quote # Crucial for Pollinations URL
+
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({"success": False, "error": "No JSON received"}), 400
+
+    required = [
+        "location", "area", "home_type", "style",
+        "material", "user_budget", "room_type", "color_palette"
+    ]
+
+    missing = [f for f in required if f not in data]
+    if missing:
+        return jsonify({"success": False, "error": f"Missing fields: {missing}"}), 400
+
+    # Configure Gemini
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+    system_prompt = """
+    You are an expert interior design budget estimator.
+    Output ONLY valid JSON in this format:
+    {
+      "estimated_cost": number,
+      "breakdown": {
+        "Furniture": number,
+        "Kitchen": number,
+        "Paint": number,
+        "Electricals": number,
+        "Civil": number,
+        "Misc": number
+      },
+      "recommendations": ["string", "string"]
+    }
+    """
+
+    user_prompt = f"""
+    Estimate interior design cost.
+
+    City: {data['location']}
+    Area: {data['area']}
+    Home Type: {data['home_type']}
+    Style: {data['style']}
+    Material Quality: {data['material']}
+    User Budget: {data['user_budget']}
+    """
+
+    # -----------------------------
+    # 1️⃣ COST ESTIMATE (Gemini) - CORRECTED MODEL
+    # -----------------------------
     try:
-        # 1. Fetch the designer's main profile
-        designer_res = supabase.table("designers") \
-            .select("*") \
-            .eq("id", designer_id) \
-            .limit(1) \
-            .execute()
+        model = genai.GenerativeModel("gemini-2.5-flash") # <-- Corrected to free-tier model
 
-        if not designer_res.data:
-            flash("Sorry, that designer could not be found.", "danger")
-            return redirect(request.referrer or url_for("user_dashboard"))
-
-        designer = designer_res.data[0]
-
-        # 2. Fetch all portfolio projects for that designer
-        portfolio_res = supabase.table("designer_portfolio") \
-            .select("*") \
-            .eq("designer_id", designer_id) \
-            .order("uploaded_at", desc=True) \
-            .execute()
-            
-        portfolio_projects = portfolio_res.data or []
-
-        print(f"Viewing profile for {designer['designer_name']}")
-        print(f"Found {len(portfolio_projects)} portfolio projects.")
-
-        # 3. Render the new template
-        return render_template(
-            "designer_portfolio_public.html",
-            user=user,
-            designer=designer,
-            portfolio_projects=portfolio_projects
+        response = model.generate_content(
+            system_prompt + "\n" + user_prompt,
+            generation_config={"response_mime_type": "application/json"}
         )
 
+        print("Gemini Raw Output:", response.text)
+
+        cost_data = json.loads(response.text)
+
     except Exception as e:
-        print(f"ERROR viewing designer profile: {e}")
-        flash("An error occurred while trying to load that profile.", "danger")
-        return redirect(url_for("user_dashboard"))
-    
+        print("Gemini cost estimation error:", e)
+        return jsonify({"success": False, "error": str(e)}), 500
 
-# ... (add this with your other @app.route functions)
-
-# ------------------ NEW BOOKING ROUTES ------------------
-
-@app.route("/book_consultation/<string:designer_id>", methods=["GET", "POST"])
-@login_required
-def book_consultation(designer_id):
-    """
-    Shows the booking form (GET) and handles the submission (POST).
-    """
-    user = session["user"]
-    designer_res = supabase.table("designers").select("*").eq("id", designer_id).limit(1).execute()
-    if not designer_res.data:
-        flash("Sorry, that designer could not be found.", "danger")
-        return redirect(url_for("browse_designers"))
-    designer = designer_res.data[0]
-
-    if request.method == "POST":
-        try:
-            booking_date = request.form.get("booking_date")
-            booking_time = request.form.get("booking_time")
-            notes = request.form.get("notes")
-            full_booking_datetime = f"{booking_date}T{booking_time}:00"
-
-            new_booking = {
-                "user_id": user["id"],
-                "user_name": user["name"],
-                "designer_id": designer["id"],
-                "designer_email": designer["email"],
-                "booking_date": full_booking_datetime,
-                "notes": notes,
-                "booking_status": "pending"
-            }
-            supabase.table("designer_bookings").insert(new_booking).execute()
-            flash("Consultation requested! The designer will be notified.", "success")
-            return redirect(url_for("my_consultations"))
-        except Exception as e:
-            print(f"ERROR creating booking: {e}")
-            flash("An error occurred while booking. Please try again.", "danger")
-    
-    return render_template(
-        "book_consultation.html", 
-        user=user, 
-        designer=designer
+    # -----------------------------
+    # 2️⃣ IMAGE GENERATION (Pollinations.ai) - FREE SOLUTION
+    # -----------------------------
+    image_prompt = (
+        f"{data['room_type']} interior in {data['style']} style, "
+        f"{data['color_palette']} colors, high quality, realistic render, premium materials"
     )
 
-@app.route("/my_consultations")
-@login_required
-def my_consultations():
-    """
-    Shows the HOMEOWNER all their pending/confirmed consultations.
-    """
-    user = session["user"]
-    user_id = user["id"]
     try:
-        bookings_res = supabase.table("designer_bookings") \
-            .select("*, designers(designer_name, specialisation)") \
-            .eq("user_id", user_id) \
-            .order("booking_date", desc=True) \
-            .execute()
-        my_bookings = bookings_res.data or []
-        return render_template(
-            "my_consultations.html",
-            user=user,
-            my_bookings=my_bookings
+        # URL Encode the prompt
+        encoded_prompt = quote(image_prompt)
+        
+        # Build the Pollinations URL
+        image_url = (
+            f"https://image.pollinations.ai/prompt/{encoded_prompt}"
+            f"?width=1024&height=1024&nologo=true&model=flux" 
         )
+        print("Pollinations Image URL:", image_url)
+
+
     except Exception as e:
-        print(f"ERROR fetching user's consultations: {e}")
-        flash("Could not load your consultations.", "danger")
-        return redirect(url_for("user_dashboard"))
+        print("Pollinations image URL generation error:", e)
+        image_url = None
 
-@app.route("/api/booking/update/<int:booking_id>", methods=["POST"])
-@login_required
-def update_booking_status(booking_id):
-    """
-    API route for DESIGNERS to accept/decline bookings.
-    """
-    user = session["user"]
-    
-    if user["role"] != "designer":
-        return jsonify({"error": "Access denied."}), 403
-
-    data = request.json
-    new_status = data.get("status")
-
-    if not new_status in ["confirmed", "declined"]:
-        return jsonify({"error": "Invalid status."}), 400
-
+    # -----------------------------
+    # 3️⃣ SAVE TO SUPABASE
+    # -----------------------------
     try:
-        # Check that this designer owns this booking
-        booking_res = supabase.table("designer_bookings") \
-            .select("id, designer_id") \
-            .eq("id", booking_id) \
-            .eq("designer_id", user["id"]) \
-            .limit(1) \
-            .execute()
-
-        if not booking_res.data:
-            return jsonify({"error": "Booking not found or permission denied."}), 404
-
-        # Update the booking
-        update_res = supabase.table("designer_bookings") \
-            .update({"booking_status": new_status}) \
-            .eq("id", booking_id) \
-            .execute()
-
-        if update_res.data:
-            print(f"Designer {user['id']} updated booking {booking_id} to {new_status}")
-            return jsonify({
-                "status": "success", 
-                "new_status": new_status,
-                "booking_id": booking_id
-            }), 200
-        else:
-            raise Exception("Supabase update returned no data.")
+        # NOTE: Assumes 'supabase' object is defined globally or passed in.
+        supabase.table("budget_estimates").insert({
+            "user_id": session["user"]["id"],
+            "location": data["location"],
+            "area": data["area"],
+            "home_type": data["home_type"],
+            "style": data["style"],
+            "material": data["material"],
+            "estimated_cost": cost_data["estimated_cost"],
+            "breakdown": cost_data["breakdown"],
+            "image_url": image_url
+        }).execute()
 
     except Exception as e:
-        print(f"ERROR updating booking: {e}")
-        return jsonify({"error": str(e)}), 500
+        print("Supabase Insert Error:", e)
+
+    # -----------------------------
+    # 4️⃣ SEND TO FRONTEND
+    # -----------------------------
+    return jsonify({
+        "success": True,
+        "estimated_cost": cost_data["estimated_cost"],
+        "breakdown": cost_data["breakdown"],
+        "image_url": image_url,
+        "recommendations": cost_data.get("recommendations", [])
+    })
+#-----------------project timeline---------------------
+# Add this import at the top of your app.py file
+
+@app.route("/project_timeline")
+@login_required
+def project_timeline_page():
+    """Serves the main HTML page for the timeline module."""
+    # This route just renders the HTML file
+    user = session["user"]
+    return render_template("project_timeline.html",user=user)
+
+# --- New API Endpoint ---
+@app.route("/api/timeline_generate", methods=["POST"])
+@login_required
+def timeline_generate():
+    import json
+    import google.generativeai as genai
+    import os
+    from datetime import datetime, timedelta
+
+    data = request.get_json(silent=True)
+
+    required = ["start_date", "area", "home_type", "style", "material"]
+    if any(f not in data for f in required):
+        return jsonify({"success": False, "error": "Missing required fields for timeline"}), 400
+
+    # 1. Custom Logic to set the primary input variables (Procurement & Execution)
     
+    # Procurement (Material-based Lead Time)
+    if data['material'] == "Basic":
+        procurement_weeks = 6
+    elif data['material'] == "Premium":
+        procurement_weeks = 8
+    elif data['material'] == "Luxury":
+        procurement_weeks = 12
+    else:
+        procurement_weeks = 8 # Default
+
+    # On-Site Execution (Area-based Duration)
+    if data['area'] < 1000:
+        execution_weeks = 4
+    elif data['area'] < 2000:
+        execution_weeks = 6
+    else:
+        execution_weeks = 8
+
+    # Start Date conversion for Gemini (can be passed as a string)
+    project_start = data['start_date']
+    
+    # Configure Gemini
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+    # 2. Gemini System Prompt (Define the rules and output format)
+    system_prompt = """
+    You are an expert interior design project scheduler.
+    Your task is to calculate the start and end dates for a sequential 4-phase project timeline based on the client's inputs and assumed phase durations.
+    - Assume a 5-day work week (Monday to Friday). Do not include weekend days in the duration calculation.
+    - Output ONLY valid JSON in the specified format.
+    """ + json.dumps({
+        "total_project_days": "number (total duration including weekends)",
+        "end_date": "YYYY-MM-DD (final project completion date)",
+        "phases": [
+            {
+                "name": "string (Concept & Design, Procurement, On-Site Execution, Installation & Styling)",
+                "duration_weeks": "number",
+                "details": "string (brief description of the work)",
+                "start_date": "YYYY-MM-DD",
+                "end_date": "YYYY-MM-DD"
+            }
+        ]
+    })
+    
+    # 3. Gemini User Prompt (Provide the inputs and calculated durations)
+    user_prompt = f"""
+    Calculate a project timeline.
+    Project Start Date: {project_start} (Must be the start of Phase 1)
+
+    Phase 1 (Concept & Design): 2 weeks (Fixed)
+    Phase 2 (Procurement & Manufacturing): {procurement_weeks} weeks (Depends on Material Quality)
+    Phase 3 (On-Site Execution & Civil Works): {execution_weeks} weeks (Depends on Area)
+    Phase 4 (Installation & Styling): 1 week (Fixed)
+    
+    Ensure the start date of each phase is the day immediately following the end date of the previous phase.
+    Return the full JSON.
+    """
+    
+    # 4. API Call and Response
+    try:
+        model = genai.GenerativeModel("gemini-2.5-flash")
+
+        response = model.generate_content(
+            system_prompt + "\n" + user_prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
+
+        timeline_data = json.loads(response.text)
+        return jsonify({"success": True, "timeline": timeline_data})
+
+    except Exception as e:
+        print("Gemini timeline estimation error:", e)
+        return jsonify({"success": False, "error": str(e)}), 500
 if __name__ == "__main__":
     app.run(debug=True)

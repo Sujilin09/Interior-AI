@@ -1,0 +1,322 @@
+{% extends "layout.html" %}
+
+{% block title %}Budget Estimator – DesignAI{% endblock %}
+
+{% block head %}
+<style>
+    /* VARIABLES (Optional but recommended for consistency) */
+    :root {
+        --primary-color: #059669; /* Your current green */
+        --accent-color: #2563EB; /* A nice blue for focus */
+        --danger-color: #EF4444; /* Red for over budget */
+        --card-bg: #fff;
+        --border-color: #d1d5db; /* Light gray border */
+        --text-color: #374151;
+    }
+
+    /* GENERAL ENHANCEMENTS */
+    .estimator-card {
+        background: var(--card-bg);
+        border-radius: 12px; /* Slightly more rounded */
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Stronger, softer shadow */
+        padding: 2rem; /* More internal space */
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-color); /* Subtle border for definition */
+    }
+
+    /* FORM ELEMENTS */
+    .estimator-form label {
+        font-weight: 600; /* Bolder label for readability */
+        color: var(--text-color);
+        display: block; /* Ensure label takes full width */
+        margin-top: 1rem; /* More space between fields */
+        margin-bottom: 0.25rem;
+    }
+    .estimator-form input,
+    .estimator-form select {
+        width: 100%;
+        padding: 0.8rem 1rem; /* Increased padding */
+        border: 1px solid var(--border-color);
+        border-radius: 6px; /* Slightly more rounded */
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); /* Subtle inner shadow */
+        transition: border-color 0.2s, box-shadow 0.2s;
+        font-family: inherit;
+        font-size: 1rem;
+    }
+    /* FOCUS STATE ENHANCEMENT (Crucial for UX) */
+    .estimator-form input:focus,
+    .estimator-form select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3); /* Blue focus ring */
+        outline: none;
+    }
+
+    /* BUTTON */
+    .btn-estimate {
+        margin-top: 1.5rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    /* RESULT PANEL */
+    .result-panel {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-color); /* Separator line */
+    }
+    .result-panel h4 {
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    #estimatedCost {
+        color: var(--primary-color);
+        font-size: 1.8rem;
+    }
+    
+    /* PROGRESS BAR ENHANCEMENTS */
+    .progress {
+        height: 14px; /* Slightly thinner */
+        background-color: #e5e7eb;
+        border-radius: 7px;
+        margin: 0.75rem 0 0.5rem 0; /* Adjusted spacing */
+        overflow: hidden;
+    }
+    .progress-bar {
+        height: 100%;
+        background-color: var(--primary-color);
+        width: 0%;
+        transition: width 0.5s ease, background-color 0.5s ease;
+    }
+    .progress-bar.over-budget { /* New class for red progress bar */
+        background-color: var(--danger-color) !important;
+    }
+
+    /* OVER BUDGET ALERT */
+    .alert-over {
+        background-color: #fef2f2; /* Lighter red background */
+        color: var(--danger-color);
+        border-left: 4px solid var(--danger-color);
+        padding: 0.75rem 1rem;
+        margin-top: 1rem;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+
+    /* BREAKDOWN LIST */
+    #breakdownList {
+        list-style: none; /* Remove bullet points */
+        padding-left: 0;
+        margin-top: 1rem;
+    }
+    #breakdownList li {
+        display: flex; /* Use flexbox for spacing */
+        justify-content: space-between;
+        padding: 0.4rem 0;
+        border-bottom: 1px dotted #e5e7eb; /* Subtle line separator */
+        font-size: 0.95rem;
+    }
+    #breakdownList li:last-child {
+        border-bottom: none;
+    }
+
+    /* IMAGE PREVIEW */
+    #generatedImage {
+        overflow: hidden; 
+        box-shadow: 0 5px 15px rgba(0,0,0,0.15); 
+        margin-top: 1.5rem;
+        border-radius: 10px;
+    }
+    #generatedImage img {
+        width: 100%;
+        border-radius: 10px;
+        transition: transform 0.3s ease-in-out; 
+        display: block;
+    }
+    #generatedImage img:hover {
+        transform: scale(1.02);
+    }
+    /* Simple CSS for loading state text/spinner - assuming you have bootstrap classes or similar */
+    .loading-text {
+        color: var(--accent-color);
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="main-content">
+    <section style="margin-top:0;">
+        <div class="section-header">
+            <h3>Budget Estimator</h3>
+        </div>
+
+        <div class="estimator-card">
+            <form id="budgetForm" class="estimator-form">
+
+                <label for="location">Location / City</label>
+                <select id="location" required>
+                    <option value="">Select</option>
+                    <option value="Bangalore">Bangalore</option>
+                    <option value="Mumbai">Mumbai</option>
+                    <option value="Delhi">Delhi</option>
+                </select>
+
+                <label for="area">Area (sq.ft.)</label>
+                <input type="number" id="area" placeholder="e.g. 1100" required>
+
+                <label for="homeType">Home Type</label>
+                <select id="homeType" required>
+                    <option value="">Select</option>
+                    <option value="1BHK">1 BHK</option>
+                    <option value="2BHK">2 BHK</option>
+                    <option value="3BHK">3 BHK</option>
+                    <option value="Villa">Villa</option>
+                </select>
+
+                <label for="style">Design Style</label>
+                <select id="style" required>
+                    <option value="">Select</option>
+                    <option value="Minimal">Minimal</option>
+                    <option value="Modern">Modern</option>
+                    <option value="Luxury">Luxury</option>
+                </select>
+
+                <label for="material">Material Quality</label>
+                <select id="material" required>
+                    <option value="">Select</option>
+                    <option value="Basic">Basic</option>
+                    <option value="Premium">Premium</option>
+                    <option value="Luxury">Luxury</option>
+                </select>
+
+                <label for="budgetInput">Your Budget (₹)</label>
+                <input type="number" id="budgetInput" placeholder="e.g. 2000000" required>
+
+                <label for="roomType">Room Type (for image)</label>
+                <select id="roomType">
+                    <option value="">Full Home</option>
+                    <option value="Living Room">Living Room</option>
+                    <option value="Bedroom">Bedroom</option>
+                    <option value="Kitchen">Kitchen</option>
+                </select>
+
+                <label for="colorPalette">Color Palette</label>
+                <select id="colorPalette">
+                    <option value="Neutral">Neutral</option>
+                    <option value="Warm">Warm</option>
+                    <option value="Bold">Bold</option>
+                </select>
+
+                <button type="submit" class="btn btn-secondary full-width btn-estimate">Estimate & Generate Design</button>
+                
+                <div id="loadingSpinner" style="display:none; text-align:center; margin-top:1rem;">
+                    <p class="loading-text">Calculating cost and generating design... please wait.</p>
+                    </div>
+                
+            </form>
+
+            <div id="resultSection" class="result-panel" style="display:none;">
+                <h4>Estimated Cost: <strong>₹<span id="estimatedCost">0</span></strong></h4>
+                <p>Budget: ₹<span id="userBudget">0</span></p>
+
+                <div class="progress">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+
+                <p><small><span id="percentUsed">0%</span> of budget used.</small></p>
+
+                <div id="alertOverBudget" class="alert-over" style="display:none;">
+                    ⚠️ Over budget! Try changing material/style to reduce cost.
+                </div>
+
+                <h5>Breakdown</h5>
+                <ul id="breakdownList"></ul>
+
+                <h4 style="margin-top:1.5rem;">Generated Design Preview</h4>
+                <div id="generatedImage"></div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+document.getElementById('budgetForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    
+    const btnEstimate = document.querySelector('.btn-estimate');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const progressBar = document.getElementById('progressBar');
+    
+    // --- START LOADING STATE ---
+    btnEstimate.disabled = true;
+    btnEstimate.textContent = "Processing...";
+    loadingSpinner.style.display = 'block';
+    document.getElementById('resultSection').style.display = 'none'; // Hide results while loading
+    // ---------------------------
+
+    const payload = {
+    location: document.getElementById("location").value,
+    area: parseFloat(document.getElementById("area").value),
+    home_type: document.getElementById("homeType").value,
+    style: document.getElementById("style").value,
+    material: document.getElementById("material").value,
+    user_budget: parseFloat(document.getElementById("budgetInput").value),
+    room_type: document.getElementById("roomType").value,
+    color_palette: document.getElementById("colorPalette").value
+};
+
+
+    try {
+        const response = await fetch('/api/estimate_generate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        if (!data.success) {
+            alert("Failed to estimate! Error: " + data.error);
+            return;
+        }
+
+        // update UI
+        document.getElementById('estimatedCost').textContent = data.estimated_cost.toLocaleString();
+        userBudget.textContent = payload.user_budget.toLocaleString();
+
+        // percent calculation and color change
+        const percent = Math.min(100, (data.estimated_cost / payload.user_budget * 100)).toFixed(0);
+        percentUsed.textContent = percent + "%";
+        progressBar.style.width = percent + "%";
+
+        if (data.estimated_cost > payload.user_budget) {
+            progressBar.classList.add('over-budget');
+        } else {
+            progressBar.classList.remove('over-budget');
+        }
+        
+        alertOverBudget.style.display = data.estimated_cost > payload.user_budget ? 'block' : 'none';
+
+        breakdownList.innerHTML = "";
+        Object.entries(data.breakdown).forEach(([k, v]) => {
+            breakdownList.innerHTML += `<li><span>${k}</span> <span>₹${v.toLocaleString()}</span></li>`;
+        });
+
+        // image
+        generatedImage.innerHTML = `<img src="${data.image_url}" alt="generated design"/>`;
+
+        resultSection.style.display = 'block';
+
+    } catch (err) {
+        console.error(err);
+        alert("An unexpected network or server error occurred.");
+    } finally {
+        // --- END LOADING STATE ---
+        btnEstimate.disabled = false;
+        btnEstimate.textContent = "Estimate & Generate Design";
+        loadingSpinner.style.display = 'none';
+        // -------------------------
+    }
+});
+</script>
+{% endblock %}

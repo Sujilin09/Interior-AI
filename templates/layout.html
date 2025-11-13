@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}DesignAI{% endblock %}</title>
+    <title>{% block title %}InteriorAI{% endblock %}</title>
     
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_homeowner.css') }}">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
@@ -37,11 +37,11 @@
             </div>
             <ul class="sidebar-menu">
                 <li><a href="#" class="active"><i class='bx bx-magic-wand'></i> My AI Redesigns</a></li>
-                <li><a href="{{ url_for('my_consultations') }}"><i class='bx bx-calendar'></i> Scheduled Consultations</a></li>
+                <li><a href="#"><i class='bx bx-calendar'></i> Scheduled Consultations</a></li>
                 <li><a href="{{ url_for('saved_favorites') }}"><i class='bx bx-heart'></i> Saved Favorites</a></li>
-                <li><a href="#"><i class='bx bx-wallet'></i> Budget Tracker</a></li>
-                <li><a href="#"><i class='bx bx-time'></i> Project Timeline</a></li>
-
+                <li><a href="{{url_for('budget_estimator_page')}}"><i class='bx bx-wallet'></i> Budget Tracker</a></li>
+                <li><a href="{{url_for('project_timeline_page')}}"><i class='bx bx-time'></i> Project Timeline</a></li>
+                <li><a href="#"><i class='bx bx-shopping-bag'></i> Shopping List</a></li>
             </ul>
         </aside>
 
