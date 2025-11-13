@@ -1,0 +1,159 @@
+{% extends "layout.html" %}
+
+{% block title %}Book Consultation{% endblock %}
+
+{% block head %}
+<style>
+    /* This is the flexbox centering wrapper we use 
+      on the AI Upload wizard page. It works perfectly here.
+    */
+    .main-content-wizard {
+        grid-area: main;
+        padding: 2rem;
+        background-color: #f9fafb; /* gray-50 */
+        overflow-y: auto;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .booking-form {
+        width: 100%;
+        max-width: 600px;
+        background: #fff;
+        border-radius: 12px; /* Softer corners */
+        /* A more subtle, modern shadow */
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05), 0 4px 10px rgba(0,0,0,0.02);
+        overflow: hidden; /* To contain the new header */
+    }
+    
+    /* NEW: Header section for designer info */
+    .booking-header {
+        padding: 1.5rem 2rem;
+        background-color: #fdfdfd;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .booking-header .designer-initials {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #f0f0f0;
+        color: #555;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    .booking-header h1 {
+        margin: 0;
+        font-size: 1.25rem;
+        line-height: 1.2;
+    }
+    .booking-header h1 small {
+        display: block;
+        font-size: 0.9rem;
+        color: #555;
+        font-weight: normal;
+    }
+
+    /* Form Content Styling */
+    .form-content {
+        padding: 2rem;
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600; /* Slightly bolder */
+        color: #333;
+    }
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 6px; /* Softer corners */
+        box-sizing: border-box; 
+        background-color: #f9fafb; /* Softer than stark white */
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    /* Branded focus color */
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #059669; /* Your app's green */
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+    }
+
+    .form-group-split {
+        display: flex;
+        gap: 1rem;
+    }
+    .form-group-split > .form-group {
+        flex: 1;
+    }
+    
+    .btn-primary-submit {
+        background-color: #059669; /* Your app's green */
+        color: white;
+        padding: 0.85rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        width: 100%; /* Make it full-width */
+        transition: background-color 0.2s, transform 0.2s;
+    }
+    .btn-primary-submit:hover {
+        background-color: #065F46;
+        transform: translateY(-2px); /* Subtle hover lift */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="main-content-wizard">
+
+    <form class="booking-form" method="POST">
+        
+        <div class="booking-header">
+            <div class="designer-initials">
+                {{ designer.designer_name[0] if designer.designer_name else 'D' }}
+            </div>
+            <h1>
+                Book a Consultation
+                <small>With {{ designer.designer_name }}</small>
+            </h1>
+        </div>
+        
+        <div class="form-content">
+            <div class="form-group-split">
+                <div class="form-group">
+                    <label for="booking_date">Preferred Date</label>
+                    <input type="date" id="booking_date" name="booking_date" required>
+                </div>
+                <div class="form-group">
+                    <label for="booking_time">Preferred Time</label>
+                    <input type="time" id="booking_time" name="booking_time" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="notes">Project Notes</label>
+                <textarea id="notes" name="notes" rows="6" placeholder="Tell the designer about your project... (e.g., 'I need help with my living room, it's 200 sq ft, and I like minimalist style.')"></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary-submit">Request Consultation</button>
+        </div>
+    </form>
+</main>
+{% endblock %}

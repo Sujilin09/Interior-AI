@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Designer Dashboard{% endblock %} - DesignAI</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_homeowner.css') }}">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <nav class="top-nav">
+            <div class="nav-left">
+                <div class="logo">DesignAI</div>
+                <a href="{{ url_for('dashboard') }}" class="active">My Dashboard</a>
+                <a href="{{ url_for('designer_profile') }}">Portfolio</a>
+            </div>
+            <div class="nav-right">
+                <div class="search-bar">
+                    <i class='bx bx-search'></i>
+                    <input type="text" placeholder="Search clients, projects...">
+                </div>
+                <i class='bx bx-bell nav-icon'></i>
+                <a href="{{ url_for('logout') }}" class="nav-icon" title="Logout"><i class='bx bx-log-out-circle'></i></a>
+            </div>
+        </nav>
+
+        <aside class="sidebar-left">
+            <div class="sidebar-header">
+                Welcome, {{ user.name.split(' ')[0] | default('Designer') }}!
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{{ url_for('dashboard') }}" class="active"><i class='bx bx-grid-alt'></i> My Dashboard</a></li>
+                <li><a href="{{ url_for('designer_profile') }}"><i class='bx bx-user-circle'></i> My Portfolio</a></li>
+                <li><a href="#"><i class='bx bx-message-square-dots'></i> Messages</a></li>
+                <li><a href="#"><i class='bx bx-calendar-check'></i> My Bookings</a></li>
+                <li><a href="#"><i class='bx bx-wallet'></i> Earnings</a></li>
+            </ul>
+        </aside>
+
+        {% block content %}{% endblock %}
+        
+        <aside class="sidebar-right">
+            {% block sidebar_right %}{% endblock %}
+        </aside>
+
+    </div>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>
