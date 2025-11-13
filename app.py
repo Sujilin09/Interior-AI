@@ -330,69 +330,49 @@ def dashboard():
     
     user = session["user"]
     
-    # Security Check: If a 'user' lands here, send them to their correct dashboard.
     if user["role"] != "designer":
         flash("Access denied. Redirecting to your dashboard.", "warning")
         return redirect(url_for("user_dashboard"))
 
-    # --- From here, it's ONLY designer logic ---
+    designer_id = user["id"]
     email = user["email"].strip().lower()
-    role = user["role"]
 
     try:
         print("\n===== DASHBOARD DEBUG INFO (DESIGNER) =====")
-        print(f"Logged-in designer email: {email}")
-        print("====================================")
-
-        # Fetch designer record
-        designer_res = (
-            supabase.table("designers")
-            .select("*")
-            .filter("email", "eq", email)
-            .limit(1)
-            .execute()
-        )
-        designer = designer_res.data[0] if designer_res.data else None
-        if not designer:
+        print(f"Logged-in designer ID: {designer_id}")
+        
+        designer_res = supabase.table("designers").select("*").eq("id", designer_id).limit(1).execute()
+        
+        if not designer_res.data:
             flash("Designer not found.", "danger")
-            print(f"No designer found for: {email}")
             return redirect(url_for("index"))
 
+        designer = designer_res.data[0]
         print(f"Designer found: {designer.get('designer_name', 'Unknown')}")
 
-        # ---------- PORTFOLIO ----------
-        portfolio_res = (
-            supabase.table("designer_portfolio")
-            .select("*")
-            .filter("designer_email", "eq", email)
-            .execute()
-        )
+        # --- PORTFOLIO (Fixed to use ID) ---
+        portfolio_res = supabase.table("designer_portfolio").select("*").eq("designer_id", designer_id).execute()
         portfolio = portfolio_res.data or []
         print(f"Portfolio fetched: {len(portfolio)} items")
 
-        # ---------- REVIEWS ----------
-        review_res = (
-            supabase.table("designer_reviews")
-            .select("*")
-            .filter("designer_email", "eq", email)
-            .execute()
-        )
+        # --- REVIEWS (Fixed to use ID) ---
+        review_res = supabase.table("designer_reviews").select("*").eq("designer_id", designer_id).execute()
         reviews = review_res.data or []
         avg_rating = round(sum([r["rating"] for r in reviews]) / len(reviews), 1) if reviews else 0
         total_reviews = len(reviews)
         print(f"Reviews fetched: {total_reviews} (Avg Rating: {avg_rating})")
 
-        # ---------- BOOKINGS ----------
-        booking_res = (
-            supabase.table("designer_bookings")
-            .select("*")
-            .filter("designer_email", "eq", email)
+        # --- BOOKINGS (Fixed to use ID and new table) ---
+        booking_res = supabase.table("designer_bookings") \
+            .select("*") \
+            .eq("designer_id", designer_id) \
+            .order("booking_date", desc=True) \
             .execute()
-        )
+            
         bookings = booking_res.data or []
         print(f"Bookings fetched: {len(bookings)}")
 
-        # ---------- CALCULATIONS ----------
+        # ... (rest of your calculations for earnings, etc.) ...
         total_projects = len(portfolio)
         now = datetime.now()
         current_month = calendar.month_abbr[now.month]
@@ -402,36 +382,30 @@ def dashboard():
             if b.get("created_at") and b["created_at"][:7] == now.strftime("%Y-%m")
         ])
 
-        # ---------- EARNINGS ----------
         total_earnings = 0
         pending_earnings = 0
         for b in bookings:
             notes = b.get("notes", "")
             digits = "".join([c for c in notes if c.isdigit()])
             amount = int(digits) if digits else 0
-
             status = b.get("booking_status", "").lower()
             if status in ["confirmed", "completed"]:
                 total_earnings += amount
             elif status == "pending":
                 pending_earnings += amount
-
         print(f"Total Earnings: Rs.{total_earnings:,} | Pending: Rs.{pending_earnings:,}")
 
-        # ---------- UPCOMING SCHEDULE ----------
         upcoming_schedule = sorted(
             [b for b in bookings if b.get("booking_date")],
             key=lambda x: x["booking_date"]
         )[:3]
         print(f"Upcoming Meetings: {len(upcoming_schedule)}")
 
-        # ---------- POPULAR STYLES ----------
         style_count = {}
         for p in portfolio:
             style = p.get("design_style")
             if style:
                 style_count[style] = style_count.get(style, 0) + 1
-
         total_styles = sum(style_count.values())
         popular_styles = [
             {"style": s, "percent": round((c / total_styles) * 100, 1)}
@@ -439,7 +413,7 @@ def dashboard():
         ] if total_styles else []
         print(f"Popular Styles Found: {len(popular_styles)}")
 
-        # ---------- RENDER DESIGNER DASHBOARD ----------
+
         return render_template(
             "dashboard_designer.html",
             user=user,
@@ -449,7 +423,7 @@ def dashboard():
             total_reviews=total_reviews,
             total_projects=total_projects,
             monthly_bookings=monthly_bookings,
-            upcoming_schedule=upcoming_schedule,
+            upcoming_schedule=upcoming_schedule, # This list is now correct
             total_earnings=total_earnings,
             pending_earnings=pending_earnings,
             popular_styles=popular_styles,
@@ -460,7 +434,6 @@ def dashboard():
         print("DASHBOARD ERROR TRACEBACK:", e)
         flash("Error loading dashboard data.", "danger")
         return redirect(url_for("index"))
-
 
 # --- *** NEW ROUTE *** ---
 # --- THIS IS THE USER (HOMEOWNER) DASHBOARD ---
@@ -830,6 +803,127 @@ def view_designer(designer_id):
         print(f"ERROR viewing designer profile: {e}")
         flash("An error occurred while trying to load that profile.", "danger")
         return redirect(url_for("user_dashboard"))
+    
+
+# ... (add this with your other @app.route functions)
+
+# ------------------ NEW BOOKING ROUTES ------------------
+
+@app.route("/book_consultation/<string:designer_id>", methods=["GET", "POST"])
+@login_required
+def book_consultation(designer_id):
+    """
+    Shows the booking form (GET) and handles the submission (POST).
+    """
+    user = session["user"]
+    designer_res = supabase.table("designers").select("*").eq("id", designer_id).limit(1).execute()
+    if not designer_res.data:
+        flash("Sorry, that designer could not be found.", "danger")
+        return redirect(url_for("browse_designers"))
+    designer = designer_res.data[0]
+
+    if request.method == "POST":
+        try:
+            booking_date = request.form.get("booking_date")
+            booking_time = request.form.get("booking_time")
+            notes = request.form.get("notes")
+            full_booking_datetime = f"{booking_date}T{booking_time}:00"
+
+            new_booking = {
+                "user_id": user["id"],
+                "user_name": user["name"],
+                "designer_id": designer["id"],
+                "designer_email": designer["email"],
+                "booking_date": full_booking_datetime,
+                "notes": notes,
+                "booking_status": "pending"
+            }
+            supabase.table("designer_bookings").insert(new_booking).execute()
+            flash("Consultation requested! The designer will be notified.", "success")
+            return redirect(url_for("my_consultations"))
+        except Exception as e:
+            print(f"ERROR creating booking: {e}")
+            flash("An error occurred while booking. Please try again.", "danger")
+    
+    return render_template(
+        "book_consultation.html", 
+        user=user, 
+        designer=designer
+    )
+
+@app.route("/my_consultations")
+@login_required
+def my_consultations():
+    """
+    Shows the HOMEOWNER all their pending/confirmed consultations.
+    """
+    user = session["user"]
+    user_id = user["id"]
+    try:
+        bookings_res = supabase.table("designer_bookings") \
+            .select("*, designers(designer_name, specialisation)") \
+            .eq("user_id", user_id) \
+            .order("booking_date", desc=True) \
+            .execute()
+        my_bookings = bookings_res.data or []
+        return render_template(
+            "my_consultations.html",
+            user=user,
+            my_bookings=my_bookings
+        )
+    except Exception as e:
+        print(f"ERROR fetching user's consultations: {e}")
+        flash("Could not load your consultations.", "danger")
+        return redirect(url_for("user_dashboard"))
+
+@app.route("/api/booking/update/<int:booking_id>", methods=["POST"])
+@login_required
+def update_booking_status(booking_id):
+    """
+    API route for DESIGNERS to accept/decline bookings.
+    """
+    user = session["user"]
+    
+    if user["role"] != "designer":
+        return jsonify({"error": "Access denied."}), 403
+
+    data = request.json
+    new_status = data.get("status")
+
+    if not new_status in ["confirmed", "declined"]:
+        return jsonify({"error": "Invalid status."}), 400
+
+    try:
+        # Check that this designer owns this booking
+        booking_res = supabase.table("designer_bookings") \
+            .select("id, designer_id") \
+            .eq("id", booking_id) \
+            .eq("designer_id", user["id"]) \
+            .limit(1) \
+            .execute()
+
+        if not booking_res.data:
+            return jsonify({"error": "Booking not found or permission denied."}), 404
+
+        # Update the booking
+        update_res = supabase.table("designer_bookings") \
+            .update({"booking_status": new_status}) \
+            .eq("id", booking_id) \
+            .execute()
+
+        if update_res.data:
+            print(f"Designer {user['id']} updated booking {booking_id} to {new_status}")
+            return jsonify({
+                "status": "success", 
+                "new_status": new_status,
+                "booking_id": booking_id
+            }), 200
+        else:
+            raise Exception("Supabase update returned no data.")
+
+    except Exception as e:
+        print(f"ERROR updating booking: {e}")
+        return jsonify({"error": str(e)}), 500
     
 if __name__ == "__main__":
     app.run(debug=True)

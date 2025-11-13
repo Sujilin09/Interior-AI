@@ -1,0 +1,87 @@
+{% extends "layout.html" %}
+
+{% block title %}My Consultations{% endblock %}
+
+{% block head %}
+<style>
+    /* NEW: Using the wizard's centering class to hold our list.
+      This makes the 'margin: 2rem auto' on .consultation-list
+      work perfectly.
+    */
+    .main-content-wizard {
+        grid-area: main;
+        padding: 2rem;
+        background-color: #f9fafb;
+        overflow-y: auto;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .consultation-list {
+        max-width: 900px;
+        width: 100%; /* Take up the width of the wizard container */
+    }
+    .consultation-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin-bottom: 1.5rem;
+        padding: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+    .consultation-info h4 {
+        margin: 0 0 0.5rem 0;
+    }
+    .consultation-info p {
+        margin: 0;
+        color: #555;
+    }
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 99px;
+        font-weight: bold;
+        font-size: 0.9rem;
+        text-transform: capitalize;
+    }
+    .status-pending { background-color: #fef3c7; color: #92400e; }
+    .status-confirmed { background-color: #d1fae5; color: #065f46; }
+    .status-declined { background-color: #fee2e2; color: #991b1b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="main-content-wizard">
+    <div class="consultation-list">
+        <h1 style="font-size: 1.5rem; margin-bottom: 2rem;">My Scheduled Consultations</h1>
+
+        {% for booking in my_bookings %}
+            <div class="consultation-card">
+                <div class="consultation-info">
+                    <h4>
+                        Consultation with 
+                        <strong>{{ booking.designers.designer_name | default('a designer') }}</strong>
+                    </h4>
+                    <p>
+                        <i class='bx bx-calendar'></i> 
+                        {{ booking.booking_date | datetimeformat }}
+                    </p>
+                    <p style="margin-top: 0.5rem; color: #777;">
+                        <i>"{{ booking.notes | truncate(100) }}"</i>
+                    </p>
+                </div>
+                <div class="consultation-status">
+                    <span class="status-badge status-{{ booking.booking_status }}">
+                        {{ booking.booking_status }}
+                    </span>
+                </div>
+            </div>
+        {% else %}
+            <p class="empty-placeholder">You haven't scheduled any consultations yet.</p>
+        {% endfor %}
+    </div>
+</main>
+{% endblock %}
