@@ -1,0 +1,136 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ designer.designer_name }}'s Portfolio{% endblock %}
+
+{% block head %}
+<style>
+    .profile-header {
+        display: flex;
+        align-items: center;
+        padding: 2rem;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    .profile-initials {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background-color: #f0f0f0;
+        color: #555;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        font-weight: bold;
+        margin-right: 2rem;
+        flex-shrink: 0;
+    }
+    .profile-info h1 {
+        margin: 0;
+        font-size: 2rem;
+    }
+    .profile-info p {
+        margin: 0.25rem 0;
+        font-size: 1.1rem;
+        color: #555;
+    }
+    .profile-info .meta {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
+        color: #777;
+    }
+    
+    /* Project Grid */
+    .project-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    .project-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    .project-card img {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+    }
+    .project-card-info {
+        padding: 1rem;
+    }
+    .project-card-info h4 {
+        margin: 0 0 0.5rem 0;
+    }
+    .project-card-info p {
+        margin: 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+    .btn-book-consultation {
+    background-color: #059669; /* Your app's green */
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    text-decoration: none;
+    margin-left: auto; /* Pushes it to the right */
+}
+.btn-book-consultation:hover {
+    background-color: #065F46;
+    color: white;
+}
+</style>
+{% endblock %}
+
+
+{% block content %}
+<main class="main-content">
+    
+    <div class="profile-header">
+        <div class="profile-initials">
+            {{ designer.designer_name[0] if designer.designer_name else 'D' }}
+        </div>
+        <div class="profile-info">
+            <h1>{{ designer.designer_name }}</h1>
+            <p>{{ designer.specialisation | default('Interior Designer') }}</p>
+            <div class="meta">
+                <span><i class='bx bxs-map'></i> {{ designer.location | default('Location not set') }}</span>
+                <span><i class='bx bxs-star'></i> 4.9 (127 Reviews)</span>
+                <span><i class='bx bx-briefcase'></i> {{ designer.years_experience | default('?') }} Years</span>
+            </div>
+        </div>
+        <a href="{{ url_for('book_consultation', designer_id=designer.id) }}" class="btn-book-consultation">
+        <i class='bx bx-calendar-plus'></i> Book Consultation
+    </a>
+        </div>
+
+    <section class="portfolio-gallery">
+        <h3>Portfolio</h3>
+        <div class="project-grid">
+            
+            {% for project in portfolio_projects %}
+            <div class="project-card">
+                <img src="{{ project.image_url | default('https://placehold.co/400x300/eee/ccc?text=No+Image') }}" alt="{{ project.project_title }}">
+                <div class="project-card-info">
+                    <h4>{{ project.project_title | default('Untitled Project') }}</h4>
+                    <p>{{ project.style | default('Design') }} | {{ project.room_type | default('Space') }}</p>
+                </div>
+            </div>
+            {% else %}
+            <p class="empty-placeholder">This designer hasn't uploaded any portfolio projects yet.</p>
+            {% endfor %}
+
+        </div>
+    </section>
+
+</main>
+{% endblock %}

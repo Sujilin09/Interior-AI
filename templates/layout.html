@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DesignAI{% endblock %}</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_homeowner.css') }}">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <nav class="top-nav">
+            <div class="nav-left">
+                <div class="logo">DesignAI</div>
+                <a href="#">My Projects</a>
+                <a href="{{ url_for('user_dashboard') }}" class="active">AI Redesign</a>
+                <a href="{{ url_for('browse_designers') }}">Browse Designers</a>
+                <!-- <a href="#">Messages</a> -->
+            </div>
+            <div class="nav-right">
+                <div class="search-bar">
+                    <i class='bx bx-search'></i>
+                    <input type="text" placeholder="Search styles, designers, or furniture">
+                </div>
+                <i class='bx bx-bell nav-icon'></i>
+                <a href="{{ url_for('logout') }}" class="nav-icon" title="Logout"><i class='bx bx-log-out-circle'></i></a>
+            </div>
+        </nav>
+
+        <aside class="sidebar-left">
+            <div class="sidebar-header">
+                Welcome, {{ user.name.split(' ')[0] | default('Homeowner') }}!
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active"><i class='bx bx-magic-wand'></i> My AI Redesigns</a></li>
+                <li><a href="{{ url_for('my_consultations') }}"><i class='bx bx-calendar'></i> Scheduled Consultations</a></li>
+                <li><a href="{{ url_for('saved_favorites') }}"><i class='bx bx-heart'></i> Saved Favorites</a></li>
+                <li><a href="#"><i class='bx bx-wallet'></i> Budget Tracker</a></li>
+                <li><a href="#"><i class='bx bx-time'></i> Project Timeline</a></li>
+
+            </ul>
+        </aside>
+
+        {% block content %}{% endblock %}
+        
+        <aside class="sidebar-right">
+            <div class="card ai-assistant">
+                <h4>AI Assistant</h4>
+                <p class="placeholder-text">Chat with your AI assistant...</p>
+            </div>
+
+            <div class="card project-status">
+                <h4>Current Project Status</h4>
+                <p><strong>Living Room Redesign</strong></p>
+                <div class="progress-bar">
+                    <div class="progress" style="width: 75%;"></div>
+                </div>
+                <small>75% complete • 1 week remaining</small>
+                <a href="#" class="view-details">View Details</a>
+            </div>
+
+            <div class="card budget-alert">
+                <div class="alert-icon"><i class='bx bxs-error-circle'></i></div>
+                <div class="alert-text">
+                    <h4>Budget Alert</h4>
+                    <p>You're approaching 85% of your 40K budget. Consider reviewing your selections.</p>
+                </div>
+                <button class="btn-secondary full-width">Review Budget</button>
+            </div>
+
+            <div class="card designer-availability-widget">
+                <h4>Designer Availability</h4>
+                <div class="designer-entry">
+                    <div class="initials">PS</div>
+                    <p><strong>Priya Sharma</strong><span>Busy until 3 PM</span></p>
+                    <i class='bx bx-message-dots'></i>
+                </div>
+                <div class="designer-entry">
+                    <div class="initials">AP</div>
+                    <p><strong>Arjun Patel</strong><span>Busy until 1 PM</span></p>
+                    <i class='bx bx-message-dots'></i>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,599 @@
+/* --- Global Setup & Variables --- */
+/* --- UPDATED TO GREEN THEME AS REQUESTED --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --font-family: 'Inter', sans-serif;
+    --bg-main: #F9FAFB; /* Light grey background */
+    --bg-white: #FFFFFF;
+    --border-color: #E5E7EB; /* Light grey border */
+    --text-primary: #1F2937; /* Dark text */
+    --text-secondary: #6B7280; /* Grey text */
+    
+    /* --- GREEN THEME --- */
+    --primary-color: #059669; /* Main Accent Green */
+    --primary-color-light: #F0FDF4; /* Light Accent Green */
+    
+    --alert-color: #F59E0B; /* Yellow/Orange for alert */
+    --alert-bg: #FFFBEB;
+    --available-color: #10B981; /* Green dot (already green) */
+    --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --border-radius: 0.75rem; /* 12px */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.card {
+    background-color: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    padding: 1.5rem; /* 24px */
+}
+
+/* --- Main Dashboard Layout --- */
+.dashboard-container {
+    display: grid;
+    grid-template-columns: 240px 1fr 320px; /* Left-Sidebar | Main | Right-Sidebar */
+    grid-template-rows: 64px 1fr; /* Top-Nav | Content */
+    grid-template-areas:
+        "nav nav nav"
+        "sidebar-l main sidebar-r";
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* --- 1. Top Navigation --- */
+.top-nav {
+    grid-area: nav;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem;
+    background-color: var(--bg-white);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 10;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.nav-left .logo {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+.nav-left a {
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-weight: 500;
+    padding: 0.5rem 0;
+}
+
+.nav-left a.active {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-main);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    width: 300px;
+}
+
+.search-bar i {
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+}
+
+.search-bar input {
+    border: none;
+    background: none;
+    outline: none;
+    margin-left: 0.5rem;
+    width: 100%;
+    font-family: var(--font-family);
+}
+
+.nav-icon {
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+/* --- 2. Left Sidebar --- */
+.sidebar-left {
+    grid-area: sidebar-l;
+    background-color: var(--bg-white);
+    border-right: 1px solid var(--border-color);
+    padding: 1.5rem 1rem;
+}
+
+.sidebar-menu {
+    list-style: none;
+}
+
+.sidebar-menu li a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.sidebar-menu li a i {
+    font-size: 1.25rem;
+}
+
+.sidebar-menu li a:hover {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+}
+
+.sidebar-menu li a.active {
+    background-color: var(--primary-color-light);
+    color: var(--primary-color);
+}
+
+/* --- 3. Main Content --- */
+.main-content {
+    grid-area: main;
+    overflow-y: auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.section-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.view-all {
+    text-decoration: none;
+    color: var(--primary-color);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+/* --- Utility Buttons --- */
+.btn-primary {
+    background-color: var(--text-primary);
+    color: var(--bg-white);
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-family);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-secondary {
+    background-color: var(--bg-white);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-family);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-secondary:hover {
+    background-color: var(--bg-main);
+}
+
+.full-width {
+    width: 100%;
+    justify-content: center;
+}
+
+.filter-btn {
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: 99px; /* Pill shape */
+    padding: 0.4rem 1rem;
+    font-family: var(--font-family);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.filter-btn:hover {
+    background-color: var(--bg-main);
+}
+
+/* --- Quick Upload Card --- */
+.quick-upload .dropzone {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    text-align: center;
+    background-color: var(--bg-main);
+}
+
+.dropzone i {
+    font-size: 3rem;
+    color: var(--primary-color);
+}
+.dropzone p {
+    margin: 0.5rem 0;
+}
+.dropzone span {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+.upload-buttons {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+/* --- Recent Uploads --- */
+.uploads-grid {
+    display: flex;
+    gap: 1rem;
+}
+.upload-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-white);
+    padding: 0.5rem;
+    text-align: center;
+}
+.upload-card img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+}
+.upload-card p {
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+/* --- AI Results --- */
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+.result-card .result-image {
+    position: relative;
+    margin-bottom: 1rem;
+}
+.result-card img {
+    width: 100%;
+    border-radius: 0.5rem;
+    display: block;
+}
+.before-after-toggle {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 99px;
+    padding: 0.25rem;
+    display: flex;
+}
+.toggle-btn {
+    border: none;
+    background: none;
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+.toggle-btn.active {
+    background-color: var(--bg-white);
+    color: var(--text-primary);
+}
+.result-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+.result-info h4 {
+    font-size: 1rem;
+    font-weight: 600;
+}
+.match-score {
+    background-color: var(--primary-color-light);
+    color: var(--primary-color);
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+
+/* --- Smart Predictions --- */
+.predictions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+}
+.prediction-card {
+    padding: 1rem;
+}
+.prediction-card .card-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+}
+.prediction-card span {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+.prediction-card strong {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0.25rem 0;
+}
+.prediction-card small {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+/* Style "Trending Now" card as in image */
+.prediction-card strong:contains("Modern Minimalist") {
+    font-size: 1rem;
+    font-weight: 500;
+    background-color: var(--bg-main);
+    border: 1px solid var(--border-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    display: inline-block;
+}
+
+/* --- Recommended Designers --- */
+.designers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+.designer-card {
+    position: relative;
+}
+.designer-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.designer-initials {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--bg-main);
+    color: var(--text-secondary);
+    display: grid;
+    place-items: center;
+    font-weight: 500;
+}
+.designer-name h4 {
+    font-size: 1rem;
+    font-weight: 600;
+}
+.designer-name small {
+    color: var(--text-secondary);
+}
+.designer-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+}
+.designer-rating .bxs-star {
+    color: #F59E0B; /* Yellow star */
+}
+.designer-rating strong {
+    font-weight: 600;
+}
+.designer-rating span {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+.designer-meta {
+    margin-bottom: 1rem;
+}
+.designer-meta p {
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+.designer-meta p i {
+    font-size: 1.1rem;
+}
+.designer-availability {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--available-color);
+    background-color: #ECFDF5;
+    padding: 0.25rem 0.5rem;
+    border-radius: 99px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--available-color);
+}
+.recommendation-footer {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-top: 1rem;
+}
+
+
+/* --- 4. Right Sidebar --- */
+.sidebar-right {
+    grid-area: sidebar-r;
+    background-color: var(--bg-white);
+    border-left: 1px solid var(--border-color);
+    padding: 2rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* --- AI Assistant --- */
+.ai-assistant .placeholder-text {
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 1rem;
+    font-style: italic;
+}
+
+/* --- Project Status --- */
+.project-status h4 {
+    margin-bottom: 1rem;
+}
+.project-status p {
+    font-weight: 500;
+}
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: var(--bg-main);
+    border-radius: 99px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+.progress {
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 99px;
+}
+.project-status small {
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 1rem;
+}
+.view-details {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+/* --- Budget Alert --- */
+.budget-alert {
+    background-color: var(--alert-bg);
+    border-color: var(--alert-color);
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+.alert-icon i {
+    font-size: 1.5rem;
+    color: var(--alert-color);
+}
+.alert-text h4 {
+    color: #B45309; /* Darker alert text */
+    margin-bottom: 0.25rem;
+}
+.alert-text p {
+    color: #B45309;
+    line-height: 1.5;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+.budget-alert .btn-secondary {
+    background-color: var(--bg-white);
+    border-color: #FCD34D;
+}
+
+/* --- Designer Availability --- */
+.designer-availability-widget h4 {
+    margin-bottom: 1rem;
+}
+.designer-entry {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.designer-entry .initials {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background-color: var(--bg-main);
+    color: var(--text-secondary);
+    display: grid;
+    place-items: center;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+.designer-entry p {
+    flex-grow: 1;
+    line-height: 1.4;
+}
+.designer-entry p strong {
+    display: block;
+    font-weight: 600;
+}
+.designer-entry p span {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+.designer-entry i {
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}

@@ -1,0 +1,246 @@
+{% extends "layout.html" %}
+
+{% block title %}My Saved Favorites - DesignAI{% endblock %}
+
+{% block head %}
+<style>
+    /* --- NEW MASONRY GRID --- */
+    .favorites-grid-masonry {
+        column-count: 3; 
+        column-gap: 1.5rem; 
+        position: relative;
+    }
+
+    .favorite-card {
+        break-inside: avoid; 
+        position: relative;
+        display: inline-block; 
+        width: 100%;
+        margin-bottom: 1.5rem; 
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        overflow: hidden; 
+        box-sizing: border-box;
+    }
+    
+    @media (max-width: 1024px) {
+        .favorites-grid-masonry {
+            column-count: 2;
+        }
+    }
+    @media (max-width: 640px) {
+        .favorites-grid-masonry {
+            column-count: 1;
+        }
+    }
+    
+    /* --- CARD-SPECIFIC STYLES --- */
+    .designer-card {
+        padding: 1.5rem;
+    }
+    .designer-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .designer-initials {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #f0f0f0;
+        color: #555;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .designer-name h4 { margin: 0; font-size: 1.1rem; }
+    .designer-name small { color: #777; }
+    .designer-rating { margin-bottom: 1rem; }
+    .designer-meta p { margin: 0.25rem 0; color: #555; }
+
+
+    /* AI Design Card */
+    .ai-design-card .result-image {
+        width: 100%;
+        height: auto; 
+    }
+    .ai-design-card .result-image img {
+        width: 100%;
+        height: auto;
+        display: block; 
+        object-fit: cover;
+    }
+    .ai-design-card .result-info {
+        padding: 1rem;
+    }
+    .ai-design-card .btn-secondary {
+        margin: 0 1rem 1rem 1rem;
+        width: calc(100% - 2rem);
+    }
+
+    /* Like Button */
+    .like-button {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid #eee;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        z-index: 2;
+    }
+    .like-button i {
+        font-size: 24px;
+        color: #EF4444;
+        font-weight: bold;
+    }
+    .like-button:hover {
+        background: white;
+        transform: scale(1.1);
+    }
+    .favorite-card.fading-out {
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        opacity: 0;
+        transform: scale(0.9);
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<main class="main-content">
+    
+    <section class="recommended-designers" style="margin-top: 0;">
+        <div class="section-header">
+            <h3>My Saved Favorites</h3>
+        </div>
+        
+        <div class="favorites-grid-masonry" id="favorites-grid">
+            
+            {% for item in all_favorites %}
+                
+                {% if item.favorite_type == 'designer' %}
+                <div class="designer-card card favorite-card" id="card-designer-{{ item.id }}">
+                    <button 
+                        class="like-button liked" 
+                        data-item-id="{{ item.id }}"
+                        data-item-type="designer"
+                        title="Remove from favorites">
+                        <i class='bx bx-heart'></i>
+                    </button>
+                    <div class="designer-header">
+                        <div class="designer-initials">{{ item.designer_name[0] if item.designer_name else 'D' }}</div>
+                        <div class="designer-name">
+                            <h4>{{ item.designer_name }}</h4>
+                            <small>{{ item.specialisation | default('Interior Designer') }}</small>
+                        </div>
+                    </div>
+                    <div class="designer-rating"><i class='bx bxs-star'></i> <strong>4.9</strong> <span>(127 reviews)</span></div>
+                    <div class="designer-meta">
+                        <p><i class='bx bx-map'></i> {{ item.location | default('Not specified') }}</p>
+                        <p><i class='bx bx-rupee'></i> 
+                            {% if item.budget_range_min %}
+                                Rs.{{ item.budget_range_min }} - Rs.{{ item.budget_range_max }}
+                            {% else %}
+                                Budget not set
+                            {% endif %}
+                        </p>
+                    </div>
+                    <a href="{{ url_for('view_designer', designer_id=item.id) }}" class="btn-secondary full-width" style="text-decoration: none; text-align: center;">
+                        View Portfolio
+                    </a>
+                </div>
+
+                {% elif item.favorite_type == 'ai_image' %}
+                <div class="result-card card favorite-card ai-design-card" id="card-ai_image-{{ item.design_id }}">
+                    <button 
+                        class="like-button liked" 
+                        data-item-id="{{ item.design_id }}"
+                        data-item-type="ai_image"
+                        title="Remove from favorites">
+                        <i class='bx bx-heart'></i>
+                    </button>
+                    <div class="result-image">
+                        <img src="{{ item.image_url }}" alt="{{ item.style }} After">
+                    </div>
+                    <div class="result-info">
+                        <h4>{{ item.style | replace('_', ' ') | title }}</h4>
+                        <span class="match-score">Saved on {{ item.saved_at | datetimeformat }}</span>
+                    </div>
+                    <button class="btn-secondary full-width">View Details</button>
+                </div>
+                {% endif %}
+
+            {% else %}
+            <p class="empty-placeholder" style="grid-column: 1 / -1; text-align: center;">
+                You haven't saved any favorite designers or AI images yet. 
+                <a href="{{ url_for('browse_designers') }}" style="color: #059669; text-decoration: underline;">
+                    Start browsing!
+                </a>
+            </p>
+            {% endfor %}
+        </div>
+    </section>
+
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const favoritesGrid = document.getElementById('favorites-grid');
+    
+    favoritesGrid.addEventListener('click', (event) => {
+        const button = event.target.closest('.like-button');
+        if (!button) return; 
+
+        const itemId = button.dataset.itemId;
+        const itemType = button.dataset.itemType;
+        const card = document.getElementById(`card-${itemType}-${itemId}`);
+
+        let apiUrl = '';
+        if (itemType === 'designer') {
+            apiUrl = `/api/designer/${itemId}/like`;
+        } else if (itemType === 'ai_image') {
+            apiUrl = `/redesign/api/designs/${itemId}/like`;
+        } else {
+            return;
+        }
+
+        if (card) {
+            card.classList.add('fading-out');
+        }
+
+        fetch(apiUrl, { method: 'POST' })
+            .then(response => {
+                if (!response.ok) {
+                    if (card) card.classList.remove('fading-out');
+                    alert('Could not remove favorite. Please try again.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'unliked') {
+                    console.log(`Item ${itemId} un-liked.`);
+                    setTimeout(() => {
+                        if (card) card.remove();
+                    }, 300); 
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (card) card.classList.remove('fading-out');
+            });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "layout.html" %}
+
+{% block title %}Browse Designers - DesignAI{% endblock %}
+
+{% block head %}
+<style>
+    .like-button {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid #eee;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .like-button i {
+        font-size: 24px;
+        color: #555;
+    }
+    .like-button:hover {
+        background: white;
+        transform: scale(1.1);
+    }
+    /* This is the magic class */
+    .like-button.liked i {
+        color: #EF4444; /* Red */
+        font-weight: bold; /* Fills in the heart */
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<main class="main-content">
+    
+    <section class="recommended-designers" style="margin-top: 0;">
+        <div class="section-header">
+            <h3>Browse All Designers</h3>
+            <div class="filters">
+                <button class="filter-btn">Budget</button>
+                <button class="filter-btn">Style</button>
+                <button class="filter-btn">Location</button>
+                <button class="filter-btn">Rating</button>
+            </div>
+        </div>
+        
+        <div class="designers-grid">
+            {% for designer in all_designers %}
+            <div class="designer-card card" style="position: relative;">
+                
+                <button 
+                    class="like-button {% if designer.id in liked_designer_ids %}liked{% endif %}" 
+                    data-designer-id="{{ designer.id }}"
+                    title="Save to favorites">
+                    <i class='bx bx-heart'></i>
+                </button>
+
+                <div class="designer-header">
+                    <div class="designer-initials">
+                        {{ designer.designer_name[0] if designer.designer_name else 'D' }}
+                    </div>
+                    <div class="designer-name">
+                        <h4>{{ designer.designer_name }}</h4>
+                        <small>{{ designer.specialisation | default('Interior Designer') }}</small>
+                    </div>
+                </div>
+                <div class="designer-rating">
+                    <i class='bx bxs-star'></i>
+                    <strong>4.9</strong>
+                    <span>(127 reviews)</span>
+                </div>
+                <div class="designer-meta">
+                    <p><i class='bx bx-map'></i> {{ designer.location | default('Not specified') }}</p>
+                    <p><i class='bx bx-rupee'></i> 
+                        {% if designer.budget_range_min and designer.budget_range_max %}
+                            ₹{{ designer.budget_range_min }} - ₹{{ designer.budget_range_max }}
+                        {% else %}
+                            Budget not set
+                        {% endif %}
+                    </p>
+                </div>
+                <a href="{{ url_for('view_designer', designer_id=designer.id) }}" class="btn-secondary full-width" style="text-decoration: none; text-align: center;">
+                    View Portfolio</a>
+                
+                {% if designer.available %} <div class="designer-availability">
+                    <span class="status-dot"></span> Available
+                </div>
+                {% endif %}
+            </div>
+            
+            {% else %}
+            <p classs="empty-placeholder">No designers have registered yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Find all like buttons on the page
+    const likeButtons = document.querySelectorAll('.like-button');
+    
+    // Attach a click event listener to each one
+    likeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const designerId = button.dataset.designerId;
+            
+            // Show optimistic feedback immediately
+            button.classList.toggle('liked');
+            
+            // Send the request to our new API endpoint
+            fetch(`/api/designer/${designerId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // You might need other headers for CSRF, etc.,
+                    // but Flask-Login/Session usually handles it
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // If it failed, revert the button
+                    button.classList.toggle('liked'); 
+                    alert('Could not save favorite. Please try again.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status) {
+                    console.log(`Designer ${designerId}: ${data.status}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert on error
+                button.classList.toggle('liked');
+                alert('An error occurred. Please try again.');
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
