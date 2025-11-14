@@ -174,7 +174,10 @@
                             {% endif %}
                         </p>
                     </div>
-                    <button class="btn-secondary full-width">View Portfolio</button>
+                    <a href="{{ url_for('view_designer', designer_id=item.id) }}" class="btn-secondary full-width" style="text-decoration: none; text-align: center;">
+                        View Portfolio
+                    </a>
+                    
                 </div>
 
                 {% elif item.favorite_type == 'ai_image' %}
@@ -194,6 +197,7 @@
                         <span class="match-score">Saved on {{ item.saved_at | datetimeformat }}</span>
                     </div>
                     <button class="btn-secondary full-width">View Details</button>
+                    
                 </div>
                 {% endif %}
 

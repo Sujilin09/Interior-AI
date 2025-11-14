@@ -85,7 +85,8 @@
                         {% endif %}
                     </p>
                 </div>
-                <button class="btn-secondary full-width">View Portfolio</button>
+                <a href="{{ url_for('view_designer', designer_id=designer.id) }}" class="btn-secondary full-width" style="text-decoration: none; text-align: center;">
+                    View Portfolio</a>
                 
                 {% if designer.available %} <div class="designer-availability">
                     <span class="status-dot"></span> Available

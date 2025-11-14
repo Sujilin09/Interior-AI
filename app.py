@@ -785,6 +785,172 @@ def saved_favorites():
         flash("Could not load your saved favorites.", "danger")
         return redirect(url_for("user_dashboard"))
     
+@app.route("/designer/<string:designer_id>")
+@login_required
+def view_designer(designer_id):
+    """
+    Shows a public-facing portfolio page for a single designer.
+    """
+    user = session["user"] # For the layout
+
+    try:
+        # 1. Fetch the designer's main profile
+        designer_res = supabase.table("designers") \
+            .select("*") \
+            .eq("id", designer_id) \
+            .limit(1) \
+            .execute()
+
+        if not designer_res.data:
+            flash("Sorry, that designer could not be found.", "danger")
+            return redirect(request.referrer or url_for("user_dashboard"))
+
+        designer = designer_res.data[0]
+
+        # 2. Fetch all portfolio projects for that designer
+        portfolio_res = supabase.table("designer_portfolio") \
+            .select("*") \
+            .eq("designer_id", designer_id) \
+            .order("uploaded_at", desc=True) \
+            .execute()
+            
+        portfolio_projects = portfolio_res.data or []
+
+        print(f"Viewing profile for {designer['designer_name']}")
+        print(f"Found {len(portfolio_projects)} portfolio projects.")
+
+        # 3. Render the new template
+        return render_template(
+            "designer_portfolio_public.html",
+            user=user,
+            designer=designer,
+            portfolio_projects=portfolio_projects
+        )
+
+    except Exception as e:
+        print(f"ERROR viewing designer profile: {e}")
+        flash("An error occurred while trying to load that profile.", "danger")
+        return redirect(url_for("user_dashboard"))
+
+
+# ------------------ NEW BOOKING ROUTES ------------------
+
+@app.route("/book_consultation/<string:designer_id>", methods=["GET", "POST"])
+@login_required
+def book_consultation(designer_id):
+    """
+    Shows the booking form (GET) and handles the submission (POST).
+    """
+    user = session["user"]
+    designer_res = supabase.table("designers").select("*").eq("id", designer_id).limit(1).execute()
+    if not designer_res.data:
+        flash("Sorry, that designer could not be found.", "danger")
+        return redirect(url_for("browse_designers"))
+    designer = designer_res.data[0]
+
+    if request.method == "POST":
+        try:
+            booking_date = request.form.get("booking_date")
+            booking_time = request.form.get("booking_time")
+            notes = request.form.get("notes")
+            full_booking_datetime = f"{booking_date}T{booking_time}:00"
+
+            new_booking = {
+                "user_id": user["id"],
+                "user_name": user["name"],
+                "designer_id": designer["id"],
+                "designer_email": designer["email"],
+                "booking_date": full_booking_datetime,
+                "notes": notes,
+                "booking_status": "pending"
+            }
+            supabase.table("designer_bookings").insert(new_booking).execute()
+            flash("Consultation requested! The designer will be notified.", "success")
+            return redirect(url_for("my_consultations"))
+        except Exception as e:
+            print(f"ERROR creating booking: {e}")
+            flash("An error occurred while booking. Please try again.", "danger")
+    
+    return render_template(
+        "book_consultation.html", 
+        user=user, 
+        designer=designer
+    )
+
+@app.route("/my_consultations")
+@login_required
+def my_consultations():
+    """
+    Shows the HOMEOWNER all their pending/confirmed consultations.
+    """
+    user = session["user"]
+    user_id = user["id"]
+    try:
+        bookings_res = supabase.table("designer_bookings") \
+            .select("*, designers(designer_name, specialisation)") \
+            .eq("user_id", user_id) \
+            .order("booking_date", desc=True) \
+            .execute()
+        my_bookings = bookings_res.data or []
+        return render_template(
+            "my_consultations.html",
+            user=user,
+            my_bookings=my_bookings
+        )
+    except Exception as e:
+        print(f"ERROR fetching user's consultations: {e}")
+        flash("Could not load your consultations.", "danger")
+        return redirect(url_for("user_dashboard"))
+
+@app.route("/api/booking/update/<int:booking_id>", methods=["POST"])
+@login_required
+def update_booking_status(booking_id):
+    """
+    API route for DESIGNERS to accept/decline bookings.
+    """
+    user = session["user"]
+    
+    if user["role"] != "designer":
+        return jsonify({"error": "Access denied."}), 403
+
+    data = request.json
+    new_status = data.get("status")
+
+    if not new_status in ["confirmed", "declined"]:
+        return jsonify({"error": "Invalid status."}), 400
+
+    try:
+        # Check that this designer owns this booking
+        booking_res = supabase.table("designer_bookings") \
+            .select("id, designer_id") \
+            .eq("id", booking_id) \
+            .eq("designer_id", user["id"]) \
+            .limit(1) \
+            .execute()
+
+        if not booking_res.data:
+            return jsonify({"error": "Booking not found or permission denied."}), 404
+
+        # Update the booking
+        update_res = supabase.table("designer_bookings") \
+            .update({"booking_status": new_status}) \
+            .eq("id", booking_id) \
+            .execute()
+
+        if update_res.data:
+            print(f"Designer {user['id']} updated booking {booking_id} to {new_status}")
+            return jsonify({
+                "status": "success", 
+                "new_status": new_status,
+                "booking_id": booking_id
+            }), 200
+        else:
+            raise Exception("Supabase update returned no data.")
+
+    except Exception as e:
+        print(f"ERROR updating booking: {e}")
+        return jsonify({"error": str(e)}), 500
+    
 # ---------- Budget Estimator API (FINAL) ----------
 
 
@@ -942,48 +1108,77 @@ def timeline_generate():
 
     data = request.get_json(silent=True)
 
-    required = ["start_date", "area", "home_type", "style", "material"]
-    if any(f not in data for f in required):
-        return jsonify({"success": False, "error": "Missing required fields for timeline"}), 400
+    required_budget = ["start_date", "area", "home_type", "style", "material"]
+    if any(f not in data for f in required_budget):
+        return jsonify({"success": False, "error": "Missing required project base fields for timeline"}), 400
+
+    # Retrieve core budget inputs
+    area = int(data.get('area', 1500))
+    material = data.get('material', 'Premium')
+    project_start = data['start_date']
+    
+    # Retrieve new optional inputs (with defaults)
+    work_week_days = int(data.get('work_week', 5))
+    site_complexity = data.get('site_complexity', 'Easy')
+    decision_speed = data.get('decision_speed', 'Standard')
 
     # 1. Custom Logic to set the primary input variables (Procurement & Execution)
     
+    # --- Base Durations ---
+    concept_weeks = 2 # Base fixed duration for Phase 1
+    
     # Procurement (Material-based Lead Time)
-    if data['material'] == "Basic":
+    if material == "Basic":
         procurement_weeks = 6
-    elif data['material'] == "Premium":
+    elif material == "Premium":
         procurement_weeks = 8
-    elif data['material'] == "Luxury":
+    elif material == "Luxury":
         procurement_weeks = 12
     else:
         procurement_weeks = 8 # Default
 
     # On-Site Execution (Area-based Duration)
-    if data['area'] < 1000:
+    if area < 1000:
         execution_weeks = 4
-    elif data['area'] < 2000:
+    elif area < 2000:
         execution_weeks = 6
     else:
         execution_weeks = 8
+        
+    # --- 1A. Apply Complexity Modifiers (Python Logic) ---
+    
+    # Modifier for Client Decision Speed (Phase 1 & 2)
+    if decision_speed == 'Slow':
+        concept_weeks += 1      # Add 1 week for extra design review time
+        procurement_weeks += 1  # Add 1 week for delayed material selection sign-off
+    
+    # Modifier for Site Complexity (Phase 3)
+    # Note: Standard adds 1 week, Difficult adds 2 weeks. Easy adds 0.
+    if site_complexity == 'Difficult':
+        execution_weeks += 2    
+    elif site_complexity == 'Standard':
+        execution_weeks += 1    
 
-    # Start Date conversion for Gemini (can be passed as a string)
-    project_start = data['start_date']
+    # Phase 4 remains fixed
+    installation_weeks = 1 
     
     # Configure Gemini
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
     # 2. Gemini System Prompt (Define the rules and output format)
-    system_prompt = """
+    # UPDATED: Now uses the dynamic work_week_days variable
+    system_prompt = f"""
     You are an expert interior design project scheduler.
     Your task is to calculate the start and end dates for a sequential 4-phase project timeline based on the client's inputs and assumed phase durations.
-    - Assume a 5-day work week (Monday to Friday). Do not include weekend days in the duration calculation.
+    - Assume a {work_week_days}-day work week. If {work_week_days} is 5, assume Mon-Fri. If 6, assume Mon-Sat. If 7, assume all days. Do not include non-working days in the duration calculation.
     - Output ONLY valid JSON in the specified format.
+    - Provide realistic, descriptive text for the 'details' field for each phase.
     """ + json.dumps({
         "total_project_days": "number (total duration including weekends)",
         "end_date": "YYYY-MM-DD (final project completion date)",
         "phases": [
             {
-                "name": "string (Concept & Design, Procurement, On-Site Execution, Installation & Styling)",
+                "name": "string (Concept & Design, Procurement & Manufacturing, On-Site Execution & Civil Works, Installation & Styling)",
                 "duration_weeks": "number",
                 "details": "string (brief description of the work)",
                 "start_date": "YYYY-MM-DD",
@@ -993,19 +1188,19 @@ def timeline_generate():
     })
     
     # 3. Gemini User Prompt (Provide the inputs and calculated durations)
+    # UPDATED: Uses the modified phase durations
     user_prompt = f"""
     Calculate a project timeline.
     Project Start Date: {project_start} (Must be the start of Phase 1)
 
-    Phase 1 (Concept & Design): 2 weeks (Fixed)
-    Phase 2 (Procurement & Manufacturing): {procurement_weeks} weeks (Depends on Material Quality)
-    Phase 3 (On-Site Execution & Civil Works): {execution_weeks} weeks (Depends on Area)
-    Phase 4 (Installation & Styling): 1 week (Fixed)
+    Phase 1 (Concept & Design): {concept_weeks} weeks (Fixed/Adjusted)
+    Phase 2 (Procurement & Manufacturing): {procurement_weeks} weeks (Material-Based/Adjusted)
+    Phase 3 (On-Site Execution & Civil Works): {execution_weeks} weeks (Area-Based/Adjusted)
+    Phase 4 (Installation & Styling): {installation_weeks} week (Fixed)
     
     Ensure the start date of each phase is the day immediately following the end date of the previous phase.
     Return the full JSON.
     """
-    
     # 4. API Call and Response
     try:
         model = genai.GenerativeModel("gemini-2.5-flash")
@@ -1020,6 +1215,7 @@ def timeline_generate():
 
     except Exception as e:
         print("Gemini timeline estimation error:", e)
+        # Fallback error for non-Gemini related issues like network or JSON parsing
         return jsonify({"success": False, "error": str(e)}), 500
 if __name__ == "__main__":
     app.run(debug=True)
