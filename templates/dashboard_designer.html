@@ -206,52 +206,6 @@
 
         <!-- TWO-COLUMN MAIN LAYOUT -->
         <div class="main-layout">
-
-            <!-- LEFT COLUMN (Client Requests) -->
-
-    <div class="card">
-        <h2>Performance Overview</h2>
-        <div class="overview-grid">
-
-            <div>
-                <small>Total Projects</small>
-                <h3>{{ total_projects }}</h3>
-            </div>
-            <div>
-                <small>This Month's Bookings</small>
-                <h3>{{ monthly_bookings }}</h3>
-            </div>
-            <div>
-                <small>Average Rating</small>
-                <h3>{{ avg_rating }} <span style="color: gold;">★</span></h3>
-                <small>({{ total_reviews }} reviews)</small>
-            </div>
-        </div>
-    </div>
-
-    <section class="portfolio-preview" style="margin-top: 1.5rem;">
-        <h2>My Portfolio</h2>
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h3 style="margin: 0;">Latest Projects</h3>
-                <a href="#" class="btn-green" style="text-decoration: none;">
-                    <i class='bx bx-plus'></i> Add New Project
-                </a>
-            </div>
-            <div class="portfolio-scroll-grid">
-                {% for item in portfolio %}
-                <div class="portfolio-item">
-                    <img src="{{ item.image_url | default('https://placehold.co/300x200/eee/ccc?text=No+Image') }}" alt="{{ item.project_title }}">
-                    <p>{{ item.project_title }}</p>
-                    <small>{{ item.room_type }}</small>
-                </div>
-                {% else %}
-                <p style="color:#6b7280;">No portfolio items uploaded yet.</p>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
-
 </main>
 {% endblock %}
 

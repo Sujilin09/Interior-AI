@@ -35,8 +35,8 @@ load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 http_client = httpx.Client(verify=False)
-options = SyncClientOptions(httpx_client=http_client)
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY, options=options)
+# options = SyncClientOptions(httpx_client=http_client)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ===========================
 # FLASK BLUEPRINT SETUP
@@ -572,3 +572,60 @@ def health_check():
         "service": "Interior AI FREE (Blueprint)",
         "provider": API_PROVIDER
     })
+
+
+# ===========================
+# DESIGNER PROFILE PAGE (EDIT PROFILE + PORTFOLIO)
+# ===========================
+
+@redesign_bp.route("/designer/profile", methods=["GET", "POST"])
+def designer_profile():
+    """Show and update designer's profile & portfolio"""
+    # 1️⃣ Check login (assuming designer is logged in)
+    designer_id = session.get("designer_id")
+
+    if not designer_id:
+        flash("Please log in to view your profile.", "error")
+        return redirect(url_for("redesign.dashboard_designer"))  # fallback if needed
+
+    # 2️⃣ Fetch designer details from Supabase
+    try:
+        response = supabase.table("designers").select("*").eq("id", designer_id).execute()
+        if not response.data:
+            flash("Designer profile not found.", "error")
+            return redirect(url_for("redesign.dashboard_designer"))
+        designer = response.data[0]
+    except Exception as e:
+        print(f"[ERROR] Could not fetch designer: {e}")
+        flash("Database error fetching profile.", "error")
+        return redirect(url_for("redesign.dashboard_designer"))
+
+    # 3️⃣ Handle POST form submission (profile update)
+    if request.method == "POST":
+        try:
+            specialisation = request.form.get("specialisation")
+            studio_name = request.form.get("studio_name")
+            years_experience = request.form.get("years_experience")
+            portfolio_url = request.form.get("portfolio_url")
+            bio = request.form.get("bio")
+            design_styles = request.form.getlist("design_styles")  # multiple checkboxes
+
+            updated_data = {
+                "specialisation": specialisation,
+                "studio_name": studio_name,
+                "years_experience": years_experience,
+                "portfolio_url": portfolio_url,
+                "bio": bio,
+                "design_styles": design_styles
+            }
+
+            supabase.table("designers").update(updated_data).eq("id", designer_id).execute()
+            flash("✅ Profile updated successfully!", "success")
+            return redirect(url_for("redesign.designer_profile"))
+
+        except Exception as e:
+            print(f"[ERROR] Failed to update profile: {e}")
+            flash("❌ Could not update profile.", "error")
+
+    # 4️⃣ Render the edit profile template
+    return render_template("portfolio_designer.html", designer=designer)

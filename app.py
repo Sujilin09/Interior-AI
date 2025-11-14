@@ -1,9 +1,6 @@
 # ...existing code...
 import os
-<<<<<<< HEAD
 from werkzeug.utils import secure_filename
-=======
->>>>>>> f1192c6efa6410fceeea0e15963ccd51ef67c970
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import hashlib
 import httpx
@@ -15,12 +12,9 @@ from flask import Flask, render_template, session, redirect, url_for, flash
 from datetime import datetime
 import calendar
 import uuid
-<<<<<<< HEAD
-=======
 from supabase import create_client, Client
 from redesign_app import redesign_bp
 
->>>>>>> f1192c6efa6410fceeea0e15963ccd51ef67c970
 
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -35,8 +29,7 @@ http_client = httpx.Client(verify=False)
 
 supabase: Client = create_client(
     SUPABASE_URL,
-    SUPABASE_KEY,
-    
+    SUPABASE_KEY, 
 )
 
 app = Flask(__name__)
@@ -324,10 +317,7 @@ def preferences():
     # ... (preferences logic) ...
     pass
 
-<<<<<<< HEAD
 
-=======
->>>>>>> f1192c6efa6410fceeea0e15963ccd51ef67c970
 @app.template_filter('datetimeformat')
 def datetimeformat(value):
     """Convert ISO or timestamp into human-readable date"""
@@ -336,11 +326,7 @@ def datetimeformat(value):
     except Exception:
         return value or "N/A"
 
-
-<<<<<<< HEAD
-=======
 # --- MODIFIED: THIS IS NOW THE DESIGNER-ONLY DASHBOARD ---
->>>>>>> f1192c6efa6410fceeea0e15963ccd51ef67c970
 @app.route("/dashboard")
 @login_required
 def dashboard():
@@ -460,8 +446,6 @@ def user_dashboard():
     
     user = session["user"]
 
-<<<<<<< HEAD
-=======
     # Security Check: If a 'designer' lands here, send them to their correct dashboard.
     if user["role"] != "user":
         flash("Access denied. Redirecting to your dashboard.", "warning")
@@ -543,7 +527,6 @@ def user_dashboard():
 # --- END NEW ROUTE ---
 
 
->>>>>>> f1192c6efa6410fceeea0e15963ccd51ef67c970
 @app.route("/logout")
 def logout():
     session.pop("user", None)
@@ -597,10 +580,8 @@ def update_designer_profile():
     update_payload = {
         "specialisation": request.form.get("specialisation"),
         "studio_name": request.form.get("studio_name"),
-<<<<<<< HEAD
+
         #  IMPORTANT: Convert to integer for database consistency
-=======
->>>>>>> f1192c6efa6410fceeea0e15963ccd51ef67c970
         "years_experience": int(request.form.get("years_experience")) if request.form.get("years_experience") else None, 
         "portfolio_url": request.form.get("portfolio_url"),
         "bio": request.form.get("bio"),
@@ -649,7 +630,6 @@ def update_designer_profile():
     return redirect(url_for("designer_profile"))
 
 
-<<<<<<< HEAD
 # -------- FILE UPLOAD CONFIGURATION --------
 UPLOAD_FOLDER = os.path.join("static", "uploads")
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
@@ -720,7 +700,7 @@ def add_portfolio_item():
     except Exception as e:
         print(f"❌ Error adding project: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
-=======
+
 # ... (add this near your other routes, like user_dashboard)
 
 @app.route("/browse_designers")
@@ -757,7 +737,6 @@ def browse_designers():
         print(f"ERROR fetching designers: {e}")
         flash("Could not load designers page.", "danger")
         return redirect(url_for("user_dashboard"))
->>>>>>> f1192c6efa6410fceeea0e15963ccd51ef67c970
 
 
 # The route MUST have <string:designer_id> because it's a UUID
