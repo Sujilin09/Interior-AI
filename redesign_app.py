@@ -651,4 +651,7 @@ def designer_profile():
             return redirect(url_for("redesign.designer_profile"))
 
     # 4) GET — render the edit template. Make sure the template exists and extends layout
+
     return render_template("edit_designer_profile.html", designer=designer, user=user)
+
+
