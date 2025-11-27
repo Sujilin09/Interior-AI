@@ -35,6 +35,7 @@ supabase: Client = create_client(
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "supersecretkey_fallback")
+
 app.register_blueprint(redesign_bp, url_prefix='/redesign') 
 
 # Utility: simple password hashing
@@ -653,6 +654,76 @@ def update_designer_profile():
     # 3. Redirect back to the profile page to show the updated data and flash message
     return redirect(url_for("designer_profile"))
 
+# -------- FILE UPLOAD CONFIGURATION --------
+UPLOAD_FOLDER = os.path.join("static", "uploads")
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+
+# Create the uploads folder if it doesn’t exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    """Check if file has an allowed extension."""
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/designer/portfolio/add", methods=["POST"])
+@login_required
+def add_portfolio_item():
+    """Handles both image uploads and project data for designer portfolio."""
+    user = session.get("user")
+    if not user or user.get("role") != "designer":
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    designer_email = user["email"]
+    designer_id = user["id"]
+
+    # --- Get text fields ---
+    project_title = request.form.get("project_title")
+    project_description = request.form.get("project_description")
+    room_type = request.form.get("room_type")
+
+    # --- Get image file or URL ---
+    image_file = request.files.get("image_file")
+    image_url = request.form.get("image_url")
+
+    # --- Validate required fields ---
+    if not project_title:
+        return jsonify({"success": False, "message": "Project title is required"}), 400
+
+    if not image_file and not image_url:
+        return jsonify({"success": False, "message": "Please upload an image or provide an image URL"}), 400
+
+    # --- Handle image upload ---
+    saved_image_path = None
+    if image_file and allowed_file(image_file.filename):
+        filename = secure_filename(image_file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        image_file.save(filepath)
+        saved_image_path = f"/{filepath}"  # Accessible as /static/uploads/filename.jpg
+    elif image_url:
+        saved_image_path = image_url
+
+    # --- Create new project entry ---
+    new_project = {
+        "designer_id": designer_id,
+        "designer_email": designer_email,
+        "project_title": project_title,
+        "project_description": project_description,
+        "room_type": room_type,
+        "image_url": saved_image_path,
+        "uploaded_at": datetime.now().isoformat(),
+    }
+
+    try:
+        response = supabase.table("designer_portfolio").insert(new_project).execute()
+        if response.data:
+            return jsonify({"success": True, "project": response.data[0]})
+        else:
+            return jsonify({"success": False, "message": "Insert failed"}), 500
+
+    except Exception as e:
+        print(f"❌ Error adding project: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
 
 # ... (add this near your other routes, like user_dashboard)
 
@@ -1217,5 +1288,7 @@ def timeline_generate():
         print("Gemini timeline estimation error:", e)
         # Fallback error for non-Gemini related issues like network or JSON parsing
         return jsonify({"success": False, "error": str(e)}), 500
+
+
 if __name__ == "__main__":
     app.run(debug=True)

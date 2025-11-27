@@ -35,8 +35,8 @@ load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 http_client = httpx.Client(verify=False)
-options = SyncClientOptions(httpx_client=http_client)
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY, options=options)
+# options = SyncClientOptions(httpx_client=http_client)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ===========================
 # FLASK BLUEPRINT SETUP
@@ -572,3 +572,83 @@ def health_check():
         "service": "Interior AI FREE (Blueprint)",
         "provider": API_PROVIDER
     })
+
+
+# ===========================
+# DESIGNER PROFILE PAGE (EDIT PROFILE + PORTFOLIO)
+# ===========================
+@redesign_bp.route("/designer/profile", methods=["GET", "POST"])
+def designer_profile():
+    """Show and update designer's profile & portfolio (blueprint version)."""
+
+    # 1) Use the unified session structure used by app.py
+    user = session.get("user")
+    if not user:
+        flash("Please log in to view your profile.", "error")
+        # Redirect to main app login (keeps original behavior)
+        return redirect(url_for("login_user"))
+
+    # Ensure this is a designer
+    if user.get("role") != "designer":
+        flash("Access denied. Only designers can access this page.", "error")
+        return redirect(url_for("user_dashboard"))
+
+    designer_id = user.get("id")
+
+    # 2) Fetch designer details
+    try:
+        response = supabase.table("designers").select("*").eq("id", designer_id).limit(1).execute()
+        if not response.data:
+            flash("Designer profile not found.", "error")
+            return redirect(url_for("dashboard"))
+        designer = response.data[0]
+    except Exception as e:
+        print(f"[ERROR] Could not fetch designer: {e}")
+        flash("Database error fetching profile.", "error")
+        return redirect(url_for("dashboard"))
+
+    # 3) Handle POST (update)
+    if request.method == "POST":
+        try:
+            # Read and normalise inputs
+            specialisation = request.form.get("specialisation")
+            studio_name = request.form.get("studio_name")
+            years_experience = request.form.get("years_experience")
+            portfolio_url = request.form.get("portfolio_url")
+            bio = request.form.get("bio")
+            design_styles = request.form.getlist("design_styles")  # list
+
+            # Convert numeric fields safely
+            years_experience_val = None
+            if years_experience and years_experience.strip():
+                try:
+                    years_experience_val = int(years_experience)
+                except ValueError:
+                    # If invalid number, flash and return
+                    flash("Please enter a valid number for years of experience.", "error")
+                    return redirect(url_for("redesign.designer_profile"))
+
+            updated_data = {
+                "specialisation": specialisation,
+                "studio_name": studio_name,
+                "years_experience": years_experience_val,
+                "portfolio_url": portfolio_url,
+                "bio": bio,
+                "design_styles": design_styles
+            }
+
+            # IMPORTANT: Do not delete keys from the payload here.
+            # Let Supabase set fields to null if you explicitly want to.
+            supabase.table("designers").update(updated_data).eq("id", designer_id).execute()
+
+            # Supabase .update() may return empty .data — treat execute success as success if no exception
+            flash("✅ Profile updated successfully!", "success")
+            return redirect(url_for("redesign.designer_profile"))
+
+        except Exception as e:
+            print(f"[ERROR] Failed to update profile: {e}")
+            flash("❌ Could not update profile. Check server logs.", "error")
+            return redirect(url_for("redesign.designer_profile"))
+
+    # 4) GET — render the edit template. Make sure the template exists and extends layout
+    return render_template("edit_designer_profile.html", designer=designer, user=user)
