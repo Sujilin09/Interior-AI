@@ -595,67 +595,78 @@ def designer_profile():
         return redirect(url_for("dashboard"))
     
 @app.route("/designer/profile/update", methods=["POST"])
-@login_required 
+@login_required
 def update_designer_profile():
-    # ... (This function remains UNCHANGED) ...
-    user_id = session.get("user", {}).get("id")
-    
-    if not user_id or session.get("user", {}).get("role") != "designer":
-        flash("Access denied.", "error")
+    user = session["user"]
+    user_id = user["id"]
+
+    if user["role"] != "designer":
+        flash("Unauthorized!", "danger")
         return redirect(url_for("login_designer"))
 
-    # 1. Collect updated data from the form
+    # --- Collect Form Data ---
     update_payload = {
+        "designer_name": request.form.get("designer_name"),
         "specialisation": request.form.get("specialisation"),
         "studio_name": request.form.get("studio_name"),
-
-        #  IMPORTANT: Convert to integer for database consistency
-        "years_experience": int(request.form.get("years_experience")) if request.form.get("years_experience") else None, 
         "portfolio_url": request.form.get("portfolio_url"),
         "bio": request.form.get("bio"),
-        "design_styles": request.form.getlist("design_styles"), 
-        "phone": request.form.get("phone"),
-        "location": request.form.get("location"),
-        "cities_served": [city.strip() for city in request.form.get("cities_served", "").split(',') if city.strip()],
-        "certifications": request.form.get("certifications"),
-        "awards": request.form.get("awards"),
-        "room_specializations": request.form.getlist("room_types"),
-        "material_preferences": request.form.getlist("materials") or None,
-        "color_palette_ preferences": request.form.getlist("color_palettes") or None,
-        "budget_range_min": int(request.form.get("budget_min")) if request.form.get("budget_min") else None,
-        "budget_range_max": int(request.form.get("budget_max")) if request.form.get("budget_max") else None,
-        "typical_project_size_sqft": int(request.form.get("project_size")) if request.form.get("project_size") else None,
-        "typical_project_rooms": int(request.form.get("project_rooms")) if request.form.get("project_rooms") else None,
-        "max_simultaneous_projects": int(request.form.get("max_projects")) if request.form.get("max_projects") else None,
-        "average_project_duration": request.form.get("project_duration"), # String field
-        "availability_schedule": request.form.get("availability"), # String field
-        "extra_services": request.form.getlist("extra_services") or None,
-        "preferred_communication": request.form.getlist("communication") or None,
+        "design_styles": request.form.getlist("design_styles"),
     }
 
-    # Filter out None values before updating the database
-    update_payload = {k: v for k, v in update_payload.items() if v is not None}
-    
-    # Remove empty string values for fields that accept nulls if empty
-    for key, value in list(update_payload.items()):
-        if isinstance(value, str) and not value.strip():
-            update_payload[key] = None
+    # Years of experience
+    yrs = request.form.get("years_experience")
+    update_payload["years_experience"] = int(yrs) if yrs else None
+
+    # Remove empty values
+    clean_payload = {}
+    for key, value in update_payload.items():
+        if isinstance(value, str):
+            if value.strip() != "":
+                clean_payload[key] = value
+        elif value not in [None, [], ""]:
+            clean_payload[key] = value
+
+    # DEBUGGING (important)
+    print("\n========== CLEAN PAYLOAD SENT TO SUPABASE ==========")
+    print(clean_payload)
+    print("====================================================\n")
+
+    if not clean_payload:
+        flash("No changes submitted.", "warning")
+        return redirect(url_for("designer_profile"))
 
     try:
-        # 2. Update the record in the 'designers' table where id matches the session user
-        update_response = supabase.table("designers").update(update_payload).eq("id", user_id).execute()
-        
-        if update_response.data:
-            flash("Profile successfully updated!", "success")
+        result = (
+            supabase.table("designers")
+            .update(clean_payload)
+            .eq("id", user_id)
+            .execute()
+        )
+
+        print("\n=========== SUPABASE UPDATE RESPONSE ===========")
+        print(result)
+        print("================================================\n")
+
+        # When Supabase updates successfully, result.data has updated row
+        if result.data:
+            flash("Profile updated successfully!", "success")
+
+            # Keep session name up to date
+            if "designer_name" in clean_payload:
+                session["user"]["name"] = clean_payload["designer_name"]
+
         else:
-            flash("Profile not updated. Data was the same or an issue occurred.", "warning")
+            flash("Profile not updated — identical data or DB restriction.", "warning")
 
     except Exception as e:
-        print(f"Database error during profile update: {e}")
-        flash("Database error during profile update. Check your input types (e.numeric fields).", "error")
+        print("\n*********** PROFILE UPDATE ERROR ***********")
+        print("Error:", e)
+        print("*********************************************\n")
+        flash(f"Profile update failed: {e}", "danger")
 
-    # 3. Redirect back to the profile page to show the updated data and flash message
     return redirect(url_for("designer_profile"))
+
 
 
 # -------- FILE UPLOAD CONFIGURATION --------

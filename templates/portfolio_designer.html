@@ -196,10 +196,14 @@
             <h3>Basic Information (Frozen) 🔒</h3>
             
             <div class="form-group">
-                <label for="name">Full Name:</label>
-                <input type="text" name="name" id="name" value="{{ designer.designer_name | default('') }}" >
-
+                <label for="designer_name">Full Name:</label>
+                <input type="text"
+                    name="designer_name"
+                    id="designer_name"
+                    value="{{ designer.designer_name | default('') }}"
+                    required>
             </div>
+
             <div class="form-group">
                 <label for="email">Email:</label>
                 <input type="email" name="email" id="email" value="{{ designer.email | default('') }}" readonly>
