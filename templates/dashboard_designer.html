@@ -4,10 +4,7 @@
 
 {% block head %}
 <style>
-    /* These styles are all the same as before.
-      They just style the cards and buttons to match
-      your green-and-white theme.
-    */
+    /* --- Performance Overview Grid --- */
     .overview-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -16,6 +13,7 @@
     .overview-grid h3 { font-size: 1.5rem; margin: 0; }
     .overview-grid small { color: #666; }
     
+    /* --- Portfolio Slider (Existing) --- */
     .portfolio-scroll-grid {
         display: flex;
         gap: 1.5rem;
@@ -39,37 +37,80 @@
     .portfolio-item p { margin: 0.5rem 0 0 0; font-weight: bold; }
     .portfolio-item small { color: #6b7280; }
 
-    /* Buttons to match your green/white theme */
-    .btn-green {
-        background-color: #059669; color: white; padding: 8px 15px;
-        border: none; border-radius: 6px; cursor: pointer;
-        font-weight: 500; transition: background-color 0.2s;
-        text-decoration: none;
+    /* --- NEW: Lead Recommendations Slider --- */
+    .leads-slider {
+        display: flex;
+        gap: 1.5rem;
+        overflow-x: auto; /* Enables horizontal scroll */
+        padding-bottom: 1.5rem; /* Space for scrollbar */
+        scroll-behavior: smooth;
     }
+    /* Optional: Custom Scrollbar Styling */
+    .leads-slider::-webkit-scrollbar { height: 8px; }
+    .leads-slider::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+    .leads-slider::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
+    .leads-slider::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+
+    .lead-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.25rem;
+        background: #fff;
+        transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+        
+        /* Slider Properties */
+        min-width: 280px; /* Fixed width so they don't squish */
+        flex: 0 0 auto;   /* Prevent shrinking */
+    }
+    .lead-card:hover {
+        transform: translateY(-3px);
+        border-color: #059669;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .lead-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+    .lead-avatar {
+        width: 40px; height: 40px;
+        background: #e6fffa; color: #059669;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: bold; font-size: 1.1rem;
+    }
+    .match-score {
+        background: #059669; color: white;
+        font-size: 0.75rem; padding: 4px 10px;
+        border-radius: 99px; font-weight: 600;
+    }
+    .lead-tags {
+        display: flex; flex-wrap: wrap; gap: 5px; margin: 12px 0;
+        height: 55px; /* Fixed height to align buttons */
+        overflow: hidden;
+    }
+    .lead-tag {
+        background: #f7fafc; border: 1px solid #edf2f7;
+        padding: 2px 8px; border-radius: 4px;
+        font-size: 0.75rem; color: #4a5568;
+    }
+    .lead-meta {
+        display: flex; justify-content: space-between;
+        font-size: 0.85rem; color: #718096;
+        border-top: 1px dashed #e2e8f0;
+        padding-top: 10px; margin-top: auto;
+    }
+
+    /* Button Styles */
+    .btn-green { background-color: #059669; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; text-decoration: none; }
     .btn-green:hover { background-color: #065F46; }
-
-    .btn-dark {
-        background-color: #333; color: white; padding: 8px 15px;
-        border: none; border-radius: 6px; cursor: pointer;
-        font-weight: 500; transition: background-color 0.2s;
-    }
-    .btn-dark:hover { background-color: #1a202c; }
-
-    .btn-decline {
-        background-color: #ef4444; color: white; padding: 8px 15px;
-        border: none; border-radius: 6px; cursor: pointer;
-        font-weight: 500; transition: background-color 0.2s;
-    }
-    .btn-decline:hover { background-color: #b91c1c; }
-
-    .badge {
-        padding: 4px 10px; border-radius: 99px; font-size: 0.75rem;
-        font-weight: bold; text-transform: capitalize;
-    }
+    .btn-dark { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .btn-decline { background-color: #ef4444; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .badge { padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: bold; text-transform: capitalize; }
     .badge.pending { background-color: #fef3c7; color: #92400e; }
     .badge.confirmed { background-color: #d1fae5; color: #065f46; }
     .badge.declined { background-color: #fee2e2; color: #991b1b; }
-
     .card-actions { margin-top: 1rem; display: flex; gap: 10px; }
 </style>
 {% endblock %}
@@ -79,7 +120,7 @@
     
     <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h1 style="font-size: 1.5rem; margin: 0;">Welcome, {{ designer.designer_name }}!</h1>
-        <a href="{{ url_for('designer_profile') }}" class="view-all">Edit My Profile <i class='bx bx-edit'></i></a>
+        <!-- <a href="{{ url_for('designer_profile') }}" class="view-all">Edit My Profile <i class='bx bx-edit'></i></a> -->
     </div>
 
     <div class="card">
@@ -101,12 +142,48 @@
         </div>
     </div>
 
-    <section class="portfolio-preview" style="margin-top: 1.5rem;">
+    <section class="recommendations-section" style="margin-top: 2rem;">
+        <h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.5rem;">
+            <i class='bx bx-target-lock' style="color: #059669;"></i> AI Lead Recommendations
+        </h2>
+        <p style="color: #666; font-size: 0.95rem; margin-bottom: 1.5rem;">
+            Matched based on your location ({{ designer.location }}) and style expertise.
+        </p>
+        
+        <div class="leads-slider">
+            {% for lead in recommended_leads %}
+            <div class="lead-card">
+                <div class="lead-header">
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <div class="lead-avatar">{{ lead.name[0] }}</div>
+                        <div>
+                            <h4 style="margin:0; font-size:1rem;">{{ lead.name }}</h4>
+                            <small style="color:#6b7280;">{{ lead.location }}</small>
+                        </div>
+                    </div>
+                    <div class="match-score">{{ lead.match_score }}% Match</div>
+                </div>
+
+                
+                <button class="btn-green" style="width:100%; margin-top:15px;" onclick="alert('You can now message {{ lead.name }}!')">
+                    Connect
+                </button>
+            </div>
+            {% else %}
+            <div class="card" style="width: 100%;">
+                <p class="empty-placeholder">No matching leads found in your area right now. Try updating your location or styles.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+
+    <section class="portfolio-preview" style="margin-top: 2rem;">
         <h2>My Portfolio</h2>
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h3 style="margin: 0;">Latest Projects</h3>
-                <a href="#" class="btn-green" style="text-decoration: none;">
+                <a href="{{ url_for('add_project') }}" class="btn-green" style="text-decoration: none;">
                     <i class='bx bx-plus'></i> Add New Project
                 </a>
             </div>
@@ -125,108 +202,4 @@
     </section>
 
 </main>
-{% endblock %}
-
-{% block sidebar_right %}
-    <div class="card">
-        <h4>Client Requests</h4>
-        {% if upcoming_schedule %}
-            {% for s in upcoming_schedule %}
-            <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #f0f0f0;">
-                <div style="display:flex; justify-content:space-between; align-items: center;">
-                    <p style="font-weight:bold; margin: 0;">{{ s.notes or "Client Request" }}</p>
-                    <span class="badge {{ s.booking_status }}" id="badge-{{ s.id }}">
-                        {{ s.booking_status }}
-                    </span>
-                </div>
-                <small style="color:#6b7280;">From: {{ s.user_name or 'a user' }}</small><br>
-                <small style="color:#6b7280;">On: {{ s.booking_date | datetimeformat }}</small>
-                
-                {% if s.booking_status == 'pending' %}
-                <div class="card-actions" id="actions-{{ s.id }}">
-                    <button class="btn-green btn-action" data-booking-id="{{ s.id }}" data-action="confirmed">Accept</button>
-                    <button class="btn-dark btn-action" data-booking-id="{{ s.id }}" data-action="chat">Chat</button>
-                    <button class="btn-decline btn-action" data-booking-id="{{ s.id }}" data-action="declined">Decline</button>
-                </div>
-                {% endif %}
-            </div>
-            {% endfor %}
-        {% else %}
-            <p class="empty-placeholder" style="margin: 0;">No new client requests.</p>
-        {% endif %}
-    </div>
-
-    <div class="card">
-        <h4>Earnings ({{ current_month }})</h4>
-        <h2 style="font-size: 1.8rem; color: #059669; margin: 0.5rem 0;">
-            Rs.{{ "{:,.0f}".format(total_earnings) }}
-        </h2>
-        <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
-            <span>Pending Payout</span>
-            <span style="color:#ef4444; font-weight: bold;">Rs.{{ "{:,.0f}".format(pending_earnings) }}</span>
-        </div>
-        <button class="btn-secondary full-width" style="margin-top: 1rem;">Payout Settings</button>
-    </div>
-
-    <div class="card">
-        <h4>Popular Styles</h4>
-        <div style="font-size:0.9rem; margin-top: 1rem;">
-            {% for item in popular_styles %}
-            <div style="display:flex; justify-content:space-between; margin-bottom: 0.5rem;">
-                <span>{{ item.style }}</span>
-                <span style="font-weight: bold;">{{ item.percent }}%</span>
-            </div>
-            {% else %}
-            <p style="color:#6b7280;">No style data yet.</p>
-            {% endfor %}
-        </div>
-    </div>
-    
-{% endblock %}
-
-{% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const actionButtons = document.querySelectorAll('.btn-action');
-    actionButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const bookingId = button.dataset.bookingId;
-            const action = button.dataset.action;
-
-            if (action === 'chat') {
-                alert('Chat feature coming soon!');
-                return;
-            }
-            updateBookingStatus(bookingId, action);
-        });
-    });
-
-    async function updateBookingStatus(bookingId, newStatus) {
-        const badge = document.getElementById(`badge-${bookingId}`);
-        const actionContainer = document.getElementById(`actions-${bookingId}`);
-        try {
-            const response = await fetch(`/api/booking/update/${bookingId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to update status');
-            }
-            const result = await response.json();
-            if (result.status === 'success') {
-                badge.textContent = result.new_status;
-                badge.className = `badge ${result.new_status}`; 
-                if (actionContainer) {
-                    actionContainer.style.display = 'none';
-                }
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert(`An error occurred: ${error.message}`);
-        }
-    }
-});
-</script>
 {% endblock %}

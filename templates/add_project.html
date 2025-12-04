@@ -1,0 +1,60 @@
+{% extends "layout_designer.html" %}
+
+{% block title %}Add New Project{% endblock %}
+
+{% block content %}
+<main class="main-content">
+    <div class="card" style="max-width: 800px; margin: 0 auto;">
+        <h2 style="margin-top: 0; margin-bottom: 1.5rem;">Add New Project</h2>
+
+        <form method="POST" enctype="multipart/form-data">
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Project Title</label>
+                <input type="text" name="project_title" required placeholder="e.g. Modern Sunset Villa" 
+                       style="width:100%; padding:0.75rem; border:1px solid #ddd; border-radius:6px;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Room Type</label>
+                    <select name="room_type" required style="width:100%; padding:0.75rem; border:1px solid #ddd; border-radius:6px;">
+                        <option value="Living Room">Living Room</option>
+                        <option value="Bedroom">Bedroom</option>
+                        <option value="Kitchen">Kitchen</option>
+                        <option value="Office">Office</option>
+                        <option value="Outdoor">Outdoor</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Design Style</label>
+                    <select name="design_style" required style="width:100%; padding:0.75rem; border:1px solid #ddd; border-radius:6px;">
+                        <option value="Modern">Modern</option>
+                        <option value="Minimalist">Minimalist</option>
+                        <option value="Bohemian">Bohemian</option>
+                        <option value="Industrial">Industrial</option>
+                        <option value="Traditional">Traditional</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Project Image</label>
+                <input type="file" name="image_file" accept="image/*" required 
+                       style="width:100%; padding:0.75rem; border:1px solid #ddd; border-radius:6px; background-color: #f9fafb;">
+                <small style="color: #666;">Upload a JPG or PNG (Max 5MB).</small>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Description</label>
+                <textarea name="description" rows="4" style="width:100%; padding:0.75rem; border:1px solid #ddd; border-radius:6px;"></textarea>
+            </div>
+
+            <div style="text-align: right;">
+                <a href="{{ url_for('dashboard') }}" style="margin-right: 1rem; text-decoration: none; color: #666;">Cancel</a>
+                <button type="submit" class="btn-green">Save Project</button>
+            </div>
+        </form>
+    </div>
+</main>
+{% endblock %}
+

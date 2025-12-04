@@ -496,23 +496,24 @@ def generate_room_designs():
         }), 500
 
 
+# This is inside redesign_app.py
+
 @redesign_bp.route("/api/designs/<string:design_id>/like", methods=['POST'])
 def like_design(design_id: str):
-    """Toggle like status and save to Supabase."""
-
+    """
+    Toggle like status and save to Supabase.
+    This is now smart enough to handle un-liking
+    even if the app was restarted.
+    """
+    
     if "user" not in session:
         return jsonify({"detail": "Authentication required."}), 401
-
+    
     user = session["user"]
     user_id = user["id"]
 
-    # Find the design in our temporary database
-    design_data = DESIGN_DATABASE.get(design_id)
-    if not design_data:
-        return jsonify({"detail": "Design not found or app was restarted."}), 404
-
     try:
-        # Check if it's already liked in the database
+        # 1. ALWAYS check the real database first.
         existing_like = supabase.table("saved_ai_designs") \
             .select("id") \
             .eq("user_id", user_id) \
@@ -520,13 +521,27 @@ def like_design(design_id: str):
             .execute()
 
         if existing_like.data:
-            # UN-like (DELETE)
+            # 2. IT EXISTS, SO UN-LIKE (DELETE)
+            # This is what you want to happen on your favorites page.
             supabase.table("saved_ai_designs").delete().eq("id", existing_like.data[0]["id"]).execute()
             print(f"User {user_id} UN-liked AI design {design_id}")
+            
+            # Also update temporary DB if it's there
+            if design_id in DESIGN_DATABASE:
+                DESIGN_DATABASE[design_id]["liked"] = False
+                
             return jsonify({"status": "unliked", "design_id": design_id, "liked": False})
-
+        
         else:
-            # LIKE (INSERT)
+            # 3. IT DOES NOT EXIST, SO LIKE (INSERT)
+            # This only works if it's in our temporary DB
+            design_data = DESIGN_DATABASE.get(design_id)
+            if not design_data:
+                # This was your 404 error!
+                print(f"User {user_id} tried to like {design_id} but it's not in memory.")
+                return jsonify({"detail": "Design data lost. Please re-generate to like."}), 404
+
+            # If we found it in memory, save it to the database
             new_like = {
                 "user_id": user_id,
                 "design_id": design_data["design_id"],
@@ -535,6 +550,7 @@ def like_design(design_id: str):
             }
             supabase.table("saved_ai_designs").insert(new_like).execute()
             print(f"User {user_id} LIKED AI design {design_id}")
+            DESIGN_DATABASE[design_id]["liked"] = True
             return jsonify({"status": "liked", "design_id": design_id, "liked": True})
 
     except Exception as e:

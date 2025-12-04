@@ -8,6 +8,25 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_homeowner.css') }}">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     
+    <style>
+        /* GLOBAL STYLES FOR SIDEBAR WIDGETS */
+        .btn-green { background-color: #059669; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; text-decoration: none; }
+        .btn-green:hover { background-color: #065F46; }
+
+        .btn-dark { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+        .btn-dark:hover { background-color: #1a202c; }
+
+        .btn-decline { background-color: #ef4444; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+        .btn-decline:hover { background-color: #b91c1c; }
+
+        .badge { padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: bold; text-transform: capitalize; }
+        .badge.pending { background-color: #fef3c7; color: #92400e; }
+        .badge.confirmed { background-color: #d1fae5; color: #065f46; }
+        .badge.declined { background-color: #fee2e2; color: #991b1b; }
+
+        .card-actions { margin-top: 1rem; display: flex; gap: 10px; }
+    </style>
+
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -36,7 +55,7 @@
             <ul class="sidebar-menu">
                 <li><a href="{{ url_for('dashboard') }}" class="active"><i class='bx bx-grid-alt'></i> My Dashboard</a></li>
                 <li><a href="{{ url_for('designer_profile') }}"><i class='bx bx-user-circle'></i> My Portfolio</a></li>
-                <li><a href="#"><i class='bx bx-message-square-dots'></i> Messages</a></li>
+                <li><a href="{{ url_for('designer_analytics') }}"><i class='bx bx-bar-chart-alt-2'></i> Analytics</a></li>
                 <li><a href="#"><i class='bx bx-calendar-check'></i> My Bookings</a></li>
                 <li><a href="#"><i class='bx bx-wallet'></i> Earnings</a></li>
             </ul>
@@ -45,10 +64,111 @@
         {% block content %}{% endblock %}
         
         <aside class="sidebar-right">
+            
+            <div class="card">
+                <h4>Client Requests</h4>
+                {% if upcoming_schedule %}
+                    {% for s in upcoming_schedule %}
+                    <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #f0f0f0;">
+                        <div style="display:flex; justify-content:space-between; align-items: center;">
+                            <p style="font-weight:bold; margin: 0;">{{ s.notes or "Client Request" }}</p>
+                            <span class="badge {{ s.booking_status }}" id="badge-{{ s.id }}">
+                                {{ s.booking_status }}
+                            </span>
+                        </div>
+                        <small style="color:#6b7280;">From: {{ s.user_name or 'a user' }}</small><br>
+                        <small style="color:#6b7280;">On: {{ s.booking_date | datetimeformat }}</small>
+                        
+                        {% if s.booking_status == 'pending' %}
+                        <div class="card-actions" id="actions-{{ s.id }}">
+                            <button class="btn-green btn-action" data-booking-id="{{ s.id }}" data-action="confirmed">Accept</button>
+                            <button class="btn-dark btn-action" data-booking-id="{{ s.id }}" data-action="chat">Chat</button>
+                            <button class="btn-decline btn-action" data-booking-id="{{ s.id }}" data-action="declined">Decline</button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="empty-placeholder" style="margin: 0;">No new client requests.</p>
+                {% endif %}
+            </div>
+
+            <div class="card">
+                <h4>Earnings ({{ current_month }})</h4>
+                <h2 style="font-size: 1.8rem; color: #059669; margin: 0.5rem 0;">
+                    Rs.{{ "{:,.0f}".format(total_earnings | default(0)) }}
+                </h2>
+                <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
+                    <span>Pending Payout</span>
+                    <span style="color:#ef4444; font-weight: bold;">Rs.{{ "{:,.0f}".format(pending_earnings | default(0)) }}</span>
+                </div>
+                <button class="btn-secondary full-width" style="margin-top: 1rem;">Payout Settings</button>
+            </div>
+
+            <div class="card">
+                <h4>Popular Styles</h4>
+                <div style="font-size:0.9rem; margin-top: 1rem;">
+                    {% for item in popular_styles %}
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 0.5rem;">
+                        <span>{{ item.style }}</span>
+                        <span style="font-weight: bold;">{{ item.percent }}%</span>
+                    </div>
+                    {% else %}
+                    <p style="color:#6b7280;">No style data yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+            
             {% block sidebar_right %}{% endblock %}
         </aside>
 
     </div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const actionButtons = document.querySelectorAll('.btn-action');
+        actionButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault(); // Important for buttons inside forms
+                const bookingId = button.dataset.bookingId;
+                const action = button.dataset.action;
+
+                if (action === 'chat') {
+                    alert('Chat feature coming soon!');
+                    return;
+                }
+                updateBookingStatus(bookingId, action);
+            });
+        });
+
+        async function updateBookingStatus(bookingId, newStatus) {
+            const badge = document.getElementById(`badge-${bookingId}`);
+            const actionContainer = document.getElementById(`actions-${bookingId}`);
+            try {
+                const response = await fetch(`/api/booking/update/${bookingId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to update status');
+                }
+                const result = await response.json();
+                if (result.status === 'success') {
+                    badge.textContent = result.new_status;
+                    badge.className = `badge ${result.new_status}`; 
+                    if (actionContainer) {
+                        actionContainer.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert(`An error occurred: ${error.message}`);
+            }
+        }
+    });
+    </script>
     
     {% block scripts %}{% endblock %}
 </body>
