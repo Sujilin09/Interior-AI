@@ -1,0 +1,194 @@
+{% extends "layout_designer.html" %}
+
+{% block title %}Market Intelligence{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .analytics-header { margin-bottom: 2rem; }
+    .analytics-header h1 { font-size: 1.8rem; margin: 0; color: #1a202c; }
+    .analytics-header p { color: #6b7280; margin-top: 5px; }
+
+    /* KPI Row */
+    .kpi-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .kpi-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        border: 1px solid #e2e8f0;
+    }
+    .kpi-label { font-size: 0.85rem; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+    .kpi-value { font-size: 1.8rem; font-weight: 700; color: #059669; margin: 0.5rem 0; }
+    .kpi-sub { font-size: 0.85rem; color: #666; }
+
+    /* Chart Grid (2x2 Layout) */
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
+
+    .chart-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border: 1px solid #e2e8f0;
+    }
+    .chart-header { display: flex; justify-content: space-between; margin-bottom: 1.5rem; }
+    .chart-header h3 { margin: 0; font-size: 1.1rem; color: #2d3748; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="main-content">
+    
+    <div class="analytics-header">
+        <h1>Market Intelligence</h1>
+        <p>Insights derived from {{ kpi.active_users }} active homeowners on the platform.</p>
+    </div>
+
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <span class="kpi-label">Est. Revenue</span>
+            <div class="kpi-value">Rs. {{ "{:,.0f}".format(kpi.revenue | default(0)) }}</div>
+            <span class="kpi-sub">Based on {{ kpi.bookings }} requests</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">Conversion Rate</span>
+            <div class="kpi-value">{{ kpi.conversion_rate }}%</div>
+            <span class="kpi-sub">Requests to Confirmed</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">Active Market</span>
+            <div class="kpi-value">{{ kpi.active_users }}</div>
+            <span class="kpi-sub">Homeowners looking for designs</span>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3>Most Requested Styles</h3>
+                <i class='bx bx-palette' style="color:#666;"></i>
+            </div>
+            <div style="height: 250px;">
+                <canvas id="styleChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3>Client Budget Ranges</h3>
+                <i class='bx bx-wallet' style="color:#666;"></i>
+            </div>
+            <div style="height: 250px; display: flex; justify-content: center;">
+                <canvas id="budgetChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3>Property Types</h3>
+                <i class='bx bx-building-house' style="color:#666;"></i>
+            </div>
+            <div style="height: 250px; display: flex; justify-content: center;">
+                <canvas id="propertyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-header">
+                <h3>User Locations</h3>
+                <i class='bx bx-map' style="color:#666;"></i>
+            </div>
+            <div style="height: 250px;">
+                <canvas id="cityChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+</main>
+{% endblock %}
+
+
+{% block sidebar_right %}
+<div class="card">
+    <h4>Analysis Tips</h4>
+    <p style="font-size:0.9rem; color:#666;">
+        Use these charts to tailor your portfolio. If "Modern" is trending, ensure your portfolio highlights your best Modern work.
+    </p>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    // Helper to init charts safely
+    const initChart = (id, type, labels, data, colors, labelText) => {
+        const ctx = document.getElementById(id).getContext('2d');
+        new Chart(ctx, {
+            type: type,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: labelText,
+                    data: data,
+                    backgroundColor: colors,
+                    borderRadius: 4,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        display: type !== 'bar', 
+                        position: 'right',
+                        labels: { boxWidth: 12 }
+                    }
+                },
+                scales: {
+                    y: { display: type === 'bar', beginAtZero: true },
+                    x: { display: type === 'bar' }
+                }
+            }
+        });
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Colors
+        const palette = ['#059669', '#34d399', '#6ee7b7', '#a7f3d0', '#1a202c', '#4a5568'];
+
+        // 1. Style Chart (Bar)
+        const styleLabels = {{ chart_data.style_labels | tojson | default('[]') }};
+        const styleValues = {{ chart_data.style_values | tojson | default('[]') }};
+        if(styleLabels.length) initChart('styleChart', 'bar', styleLabels, styleValues, '#059669', 'Saves');
+
+        // 2. Budget Chart (Doughnut)
+        const budgetLabels = {{ chart_data.budget_labels | tojson | default('[]') }};
+        const budgetValues = {{ chart_data.budget_values | tojson | default('[]') }};
+        if(budgetLabels.length) initChart('budgetChart', 'doughnut', budgetLabels, budgetValues, palette, 'Users');
+
+        // 3. Property Chart (Pie)
+        const propLabels = {{ chart_data.property_labels | tojson | default('[]') }};
+        const propValues = {{ chart_data.property_values | tojson | default('[]') }};
+        if(propLabels.length) initChart('propertyChart', 'pie', propLabels, propValues, palette, 'Properties');
+
+        // 4. City Chart (Bar - Horizontal ideally, but vertical is easier to setup)
+        const cityLabels = {{ chart_data.cities_labels | tojson | default('[]') }};
+        const cityValues = {{ chart_data.cities_values | tojson | default('[]') }};
+        if(cityLabels.length) initChart('cityChart', 'bar', cityLabels, cityValues, '#1a202c', 'Users');
+    });
+</script>
+{% endblock %}

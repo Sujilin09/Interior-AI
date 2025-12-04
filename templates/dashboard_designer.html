@@ -4,427 +4,367 @@
 
 {% block head %}
 <style>
-    /* These styles are all the same as before.
-      They just style the cards and buttons to match
-      your green-and-white theme.
-    */
-    .overview-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-    }
-    .overview-grid h3 { font-size: 1.5rem; margin: 0; }
-    .overview-grid small { color: #666; }
-    
-    .portfolio-scroll-grid {
-        display: flex;
-        gap: 1.5rem;
-        overflow-x: auto;
-        padding-bottom: 1rem;
-    }
-    .portfolio-item {
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 1rem;
-        min-width: 220px;
-        background: #fdfdfd;
-    }
-    .portfolio-item img {
-        width: 100%;
-        height: 120px;
-        object-fit: cover;
-        border-radius: 4px;
-        margin-bottom: 0.5rem;
-    }
-    .portfolio-item p { margin: 0.5rem 0 0 0; font-weight: bold; }
-    .portfolio-item small { color: #6b7280; }
+/* --- Performance Overview Grid --- */
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+.overview-grid h3 { font-size: 1.5rem; margin: 0; }
+.overview-grid small { color: #666; }
 
-    /* Buttons to match your green/white theme */
-    .btn-green {
-        background-color: #059669; color: white; padding: 8px 15px;
-        border: none; border-radius: 6px; cursor: pointer;
-        font-weight: 500; transition: background-color 0.2s;
-        text-decoration: none;
-    }
-    .btn-green:hover { background-color: #065F46; }
+/* --- SINGLE Portfolio Slider --- */
+.portfolio-scroll-grid {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    scroll-behavior: smooth;
+}
+.portfolio-scroll-grid::-webkit-scrollbar { height: 8px; }
+.portfolio-scroll-grid::-webkit-scrollbar-track { background: #f1f1f1; }
+.portfolio-scroll-grid::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
 
-    .btn-dark {
-        background-color: #333; color: white; padding: 8px 15px;
-        border: none; border-radius: 6px; cursor: pointer;
-        font-weight: 500; transition: background-color 0.2s;
-    }
-    .btn-dark:hover { background-color: #1a202c; }
+.portfolio-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    min-width: 220px;
+    background: #ffffff;
+}
+.portfolio-item img {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+.portfolio-item p { margin: 10px 0 3px 0; font-weight: bold; }
+.portfolio-item small { color: #6b7280; }
 
-    .btn-decline {
-        background-color: #ef4444; color: white; padding: 8px 15px;
-        border: none; border-radius: 6px; cursor: pointer;
-        font-weight: 500; transition: background-color 0.2s;
-    }
-    .btn-decline:hover { background-color: #b91c1c; }
+/* Leads slider untouched */
+.leads-slider {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    padding-bottom: 1.5rem;
+    scroll-behavior: smooth;
+}
+.leads-slider::-webkit-scrollbar { height: 8px; }
+.leads-slider::-webkit-scrollbar-thumb { background: #cbd5e0; }
 
-    .badge {
-        padding: 4px 10px; border-radius: 99px; font-size: 0.75rem;
-        font-weight: bold; text-transform: capitalize;
-    }
-    .badge.pending { background-color: #fef3c7; color: #92400e; }
-    .badge.confirmed { background-color: #d1fae5; color: #065f46; }
-    .badge.declined { background-color: #fee2e2; color: #991b1b; }
+.lead-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.25rem;
+    background: #fff;
+    min-width: 280px;
+    flex: 0 0 auto;
+}
+.lead-avatar {
+    width: 40px; height: 40px;
+    background: #e6fffa; color: #059669;
+    border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    font-weight: bold;
+}
 
-    .card-actions { margin-top: 1rem; display: flex; gap: 10px; }
+.btn-green {
+    background-color: #059669;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+}
+.btn-green:hover { background-color: #046c4e; }
+
+/* Dimmed background overlay */
+#addProjectModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.55); /* darker than before */
+    backdrop-filter: blur(3px); /* smooth blur effect */
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+/* Modal box */
+.modal-box {
+    background: #ffffff; /* FULL WHITE */
+    width: 450px;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    animation: modalFadeIn 0.25s ease-out;
+}
+
+/* Fade animation */
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Inputs */
+.modal-box label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.modal-box input,
+.modal-box textarea {
+    margin-bottom: 18px;
+}
+
+
+/* Buttons */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-cancel {
+    background: #e5e7eb;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-green {
+    background: #059669;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
 </style>
 {% endblock %}
 
 {% block content %}
+<main class="main-content">
 
+    <!-- HEADER -->
+    <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <h1>Welcome, {{ designer.designer_name if designer else "Designer" }}!</h1>
 
-    <!-- MAIN CONTENT -->
-    <div class="main-content">
+        <!-- Only ONE Add Project button -->
+        <a id="openAddProjectModal" class="btn-green" style="text-decoration:none; cursor:pointer;">
+            + Add New Project
+        </a>
 
-        <!-- HEADER -->
-        <div class="header">
-            <h1>Welcome, {{ designer.designer_name }}!</h1>
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <!-- <input type="search" placeholder="Search clients, projects..." style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;"> -->
-                <!-- <div style="width: 30px; height: 30px; background-color: #38c172; border-radius: 50%;"></div> -->
-            </div>
-        </div>
-
-        <!-- PERFORMANCE OVERVIEW -->
-        <div class="card">
-            <h2>Performance Overview</h2>
-            <div class="overview-grid">
-                <div>
-                    <p style="color: #6b7280;">Total Projects</p>
-                    <h3>{{ total_projects }}</h3>
-                    <small>Across all categories</small>
-                </div>
-                <div>
-                    <p style="color: #6b7280;">This Month's Bookings</p>
-                    <h3>{{ monthly_bookings }}</h3>
-                    <small>{{ current_month }}</small>
-
-                </div>
-                <div>
-                    <p style="color: #6b7280;">Average Rating</p>
-                    <h3>{{ avg_rating }} <span style="color: gold;">★</span></h3>
-                    <small>Based on {{ total_reviews }} reviews</small>
-                </div>
-            </div>
-
-            <!-- PORTFOLIO -->
-            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px;">
-                <h3 style="display: flex; justify-content: space-between;">
-                    My Portfolio
-                    <button id="openAddProjectModal" class="btn-green">+ Add New Project</button>
-                </h3>
-                <div class="portfolio-grid" style="
-                    display: grid;
-                    grid-template-columns: repeat(4, 1fr);
-                    gap: 20px;">
-
-
-                    {% for item in portfolio %}
-                    <div class="portfolio-item">
-                        <img src="{{ item.image_url or '/static/images/placeholder.jpg' }}" alt="{{ item.project_title }}"
-                            style="width:100%; height:100px; object-fit:cover; border-radius:4px;">
-                        <p style="font-weight:bold; margin:10px 0 5px 0;">{{ item.project_title }}</p>
-                        <small style="color:#6b7280;">{{ item.room_type }}</small>
-                    </div>
-                    {% else %}
-                    <p style="color:#6b7280;">No portfolio items uploaded yet.</p>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Structure -->
-        <div id="addProjectModal" style="
-            display:none; 
-            position:fixed; 
-            top:0; left:0; 
-            width:100%; height:100%; 
-            background:rgba(0,0,0,0.4); 
-            justify-content:center; 
-            align-items:center;
-        ">
-        <div style="
-            background:white; 
-            padding:25px; 
-            border-radius:8px; 
-            width:420px; 
-            box-shadow:0 4px 10px rgba(0,0,0,0.2);
-        ">
-            <h2 style="margin-top:0;">Add New Project</h2>
-            <form id="addProjectForm">
-                <div class="form-group">
-                    <label>Upload Image:</label>
-                    <input type="file" id="image_file" accept="image/*"
-                            style="width:100%; padding:8px; margin-bottom:10px;">
-                    </div>
-
-                    <div class="form-group">
-                    <label>Or paste image URL (optional):</label>
-                    <input type="url" id="image_url"
-                            placeholder="Paste image link here"
-                            style="width:100%; padding:8px; margin-bottom:10px;">
-                    </div>
-                <div class="form-group">
-                    <label>Project Title:</label>
-                    <input type="text" id="project_title" required 
-                        placeholder="e.g. Modern Living Room"
-                        style="width:100%; padding:8px; margin-bottom:10px;">
-                </div>
-                <div class="form-group">
-                    <label>Project Description:</label>
-                    <textarea id="project_description" rows="3" 
-                            placeholder="Short project summary"
-                            style="width:100%; padding:8px; margin-bottom:10px;"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Room Type:</label>
-                    <input type="text" id="room_type" required placeholder="e.g. Kitchen, Bedroom"
-                        style="width:100%; padding:8px; margin-bottom:10px;">
-                </div>
-                <div style="display:flex; justify-content:flex-end; gap:10px;">
-                    <button type="button" id="closeModal" 
-                            style="background:#ccc; border:none; padding:8px 12px; border-radius:4px;">Cancel</button>
-                    <button type="submit" 
-                            style="background:#38c172; color:white; border:none; padding:8px 12px; border-radius:4px;">
-                        Add Project
-                    </button>
-                </div>
-            </form>
-        </div>
-        </div>
-
-
-        <!-- TWO-COLUMN MAIN LAYOUT -->
-        <div class="main-layout">
-</main>
-{% endblock %}
-
-{% block sidebar_right %}
-    <div class="card">
-        <h4>Client Requests</h4>
-        {% if upcoming_schedule %}
-            {% for s in upcoming_schedule %}
-            <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #f0f0f0;">
-                <div style="display:flex; justify-content:space-between; align-items: center;">
-                    <p style="font-weight:bold; margin: 0;">{{ s.notes or "Client Request" }}</p>
-                    <span class="badge {{ s.booking_status }}" id="badge-{{ s.id }}">
-                        {{ s.booking_status }}
-                    </span>
-                </div>
-                <small style="color:#6b7280;">From: {{ s.user_name or 'a user' }}</small><br>
-                <small style="color:#6b7280;">On: {{ s.booking_date | datetimeformat }}</small>
-                
-                {% if s.booking_status == 'pending' %}
-                <div class="card-actions" id="actions-{{ s.id }}">
-                    <button class="btn-green btn-action" data-booking-id="{{ s.id }}" data-action="confirmed">Accept</button>
-                    <button class="btn-dark btn-action" data-booking-id="{{ s.id }}" data-action="chat">Chat</button>
-                    <button class="btn-decline btn-action" data-booking-id="{{ s.id }}" data-action="declined">Decline</button>
-                </div>
-                {% endif %}
-            </div>
-            {% endfor %}
-        {% else %}
-            <p class="empty-placeholder" style="margin: 0;">No new client requests.</p>
-        {% endif %}
-    </div>
-<script>
-  // ----- MODAL TOGGLE HANDLERS -----
-  const modal = document.getElementById("addProjectModal");
-  const openBtn = document.getElementById("openAddProjectModal"); // ✅ Make sure this button has this ID
-  const closeBtn = document.getElementById("closeModal");
-
-
-  openBtn.addEventListener("click", () => { modal.style.display = "flex"; });
-  closeBtn.addEventListener("click", () => { modal.style.display = "none"; });
-
-  // Close modal if clicked outside
-  window.addEventListener("click", (e) => {
-      if (e.target === modal) modal.style.display = "none";
-  });
-
-  // ----- FORM SUBMISSION HANDLER -----
-  document.getElementById("addProjectForm").addEventListener("submit", async function(e) {
-      e.preventDefault();
-
-      // Use FormData for file uploads
-      const formData = new FormData();
-      formData.append("project_title", document.getElementById("project_title").value);
-      formData.append("project_description", document.getElementById("project_description").value);
-      formData.append("room_type", document.getElementById("room_type").value);
-
-      // Handle image (either file or URL)
-      const imageFile = document.getElementById("image_file") ? document.getElementById("image_file").files[0] : null;
-      const imageUrl = document.getElementById("image_url") ? document.getElementById("image_url").value.trim() : "";
-
-      if (imageFile) {
-          formData.append("image_file", imageFile);
-      } else if (imageUrl) {
-          formData.append("image_url", imageUrl);
-      } else {
-          alert("Please upload an image or provide a URL.");
-          return;
-      }
-
-      try {
-          const res = await fetch("/designer/portfolio/add", {
-              method: "POST",
-              body: formData
-          });
-
-          const data = await res.json();
-
-          if (data.success) {
-              modal.style.display = "none"; // Close modal
-              alert("✅ Project added successfully!");
-
-              // Add new project card dynamically
-              const portfolioGrid = document.querySelector(".portfolio-grid");
-              if (portfolioGrid) {
-                  const newCard = document.createElement("div");
-                  newCard.classList.add("portfolio-item");
-                  newCard.innerHTML = `
-                      <img src="${data.project.image_url}" 
-                          style="width:100%; height:150px; object-fit:cover; border-radius:4px;">
-                      <p style="font-weight:bold; margin:10px 0 5px 0;">${data.project.project_title}</p>
-                      <small style="color:#6b7280;">${data.project.room_type || ''}</small>
-                  `;
-                  portfolioGrid.appendChild(newCard);
-              }
-
-              // Reset form
-              e.target.reset();
-
-          } else {
-              alert("❌ Error adding project: " + (data.message || "Unknown error"));
-          }
-      } catch (error) {
-          console.error("Upload failed:", error);
-          alert("❌ Upload failed. Please try again.");
-      }
-  });
-</script>
-</body>
-</html>
-
-    <div class="card">
-        <h4>Earnings ({{ current_month }})</h4>
-        <h2 style="font-size: 1.8rem; color: #059669; margin: 0.5rem 0;">
-            Rs.{{ "{:,.0f}".format(total_earnings) }}
-        </h2>
-        <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
-            <span>Pending Payout</span>
-            <span style="color:#ef4444; font-weight: bold;">Rs.{{ "{:,.0f}".format(pending_earnings) }}</span>
-        </div>
-        <button class="btn-secondary full-width" style="margin-top: 1rem;">Payout Settings</button>
     </div>
 
-    <div class="card">
-        <h4>Popular Styles</h4>
-        <div style="font-size:0.9rem; margin-top: 1rem;">
-            {% for item in popular_styles %}
-            <div style="display:flex; justify-content:space-between; margin-bottom: 0.5rem;">
-                <span>{{ item.style }}</span>
-                <span style="font-weight: bold;">{{ item.percent }}%</span>
-            </div>
+      <!-- Performance Overview -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <h2>Performance Overview</h2>
+      <div class="overview-grid" style="margin-top:12px;">
+        <div>
+          <p style="color:#6b7280;">Total Projects</p>
+          <h3>{{ total_projects or 0 }}</h3>
+          <small>Across all categories</small>
+        </div>
+        <div>
+          <p style="color:#6b7280;">This Month's Bookings</p>
+          <h3>{{ monthly_bookings or 0 }}</h3>
+          <small>{{ current_month or "" }}</small>
+        </div>
+        <div>
+          <p style="color:#6b7280;">Average Rating</p>
+          <h3>{{ avg_rating or 0 }} <span style="color: gold;">★</span></h3>
+          <small>Based on {{ total_reviews or 0 }} reviews</small>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- =============================== -->
+    <!--   MY PORTFOLIO (ONLY SLIDER)   -->
+    <!-- =============================== -->
+    <div class="card" style="margin-top:1.5rem;">
+        <h3>My Portfolio</h3>
+
+        <div class="portfolio-scroll-grid">
+            {% if portfolio %}
+                {% for item in portfolio %}
+                <div class="portfolio-item">
+                    <img src="{{ item.image_url or '/static/images/placeholder.jpg' }}">
+                    <p>{{ item.project_title or "Untitled" }}</p>
+                    <small>{{ item.room_type or "" }}</small>
+                </div>
+                {% endfor %}
             {% else %}
-            <p style="color:#6b7280;">No style data yet.</p>
-            {% endfor %}
+                <p style="color:#888;">No portfolio items uploaded yet.</p>
+            {% endif %}
         </div>
     </div>
-    
+
+    <!-- =============================== -->
+    <!-- LEAD RECOMMENDATIONS (UNCHANGED) -->
+    <!-- =============================== -->
+    <section class="card" style="margin-top:1.5rem;">
+        <h2 style="display:flex; align-items:center; gap:10px;">
+            <i class="bx bx-target-lock" style="color:#059669;"></i> AI Lead Recommendations
+        </h2>
+
+        <p style="color:#666;">Matched based on your location ({{ designer.location if designer else "N/A" }})</p>
+
+        <div class="leads-slider">
+            {% for lead in recommended_leads %}
+            <div class="lead-card">
+                <div style="display:flex; justify-content:space-between;">
+                    <div style="display:flex; gap:10px;">
+                        <div class="lead-avatar">{{ lead.name[0] }}</div>
+                        <div>
+                            <h4>{{ lead.name }}</h4>
+                            <small>{{ lead.location }}</small>
+                        </div>
+                    </div>
+                    <span class="match-score">{{ lead.match_score }}%</span>
+                </div>
+
+                <button class="btn-green" style="margin-top:10px;">Connect</button>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- =============================== -->
+    <!-- ADD PROJECT MODAL (unchanged)   -->
+    <!-- =============================== -->
+
+    <!-- Modal (hidden by default) -->
+    <div id="addProjectModal" 
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+                background:rgba(0,0,0,0.55); backdrop-filter:blur(3px);
+                justify-content:center; align-items:center; z-index:9999;">
+
+      <div style="background:white; padding:30px; border-radius:12px;
+                  width:650px; max-width:90%; 
+                  max-height:85vh; overflow-y:auto;
+                  box-shadow:0 10px 30px rgba(0,0,0,0.25);">
+
+          <h2 style="margin-top:0; margin-bottom:15px; font-size:22px; font-weight:700;">
+              Add New Project
+          </h2>
+
+          <form id="addProjectForm" enctype="multipart/form-data" style="font-size:15px;">
+
+            <div class="form-group" style="margin-bottom:18px;">
+              <label style="font-weight:600;">Upload Image:</label>
+              <input type="file" name="image_file" id="image_file" accept="image/*" 
+                    style="width:100%; padding:10px; border-radius:6px; 
+                            border:1px solid #ccc;">
+            </div>
+
+            <div class="form-group" style="margin-bottom:18px;">
+              <label style="font-weight:600;">Or paste image URL (optional):</label>
+              <input type="url" name="image_url" id="image_url" placeholder="Paste image link here"
+                    style="width:100%; padding:10px; border-radius:6px; 
+                            border:1px solid #ccc;">
+            </div>
+
+            <div class="form-group" style="margin-bottom:18px;">
+              <label style="font-weight:600;">Project Title:</label>
+              <input type="text" id="project_title" name="project_title" required 
+                    placeholder="e.g. Modern Living Room"
+                    style="width:100%; padding:10px; border-radius:6px; 
+                            border:1px solid #ccc;">
+            </div>
+
+            <div class="form-group" style="margin-bottom:18px;">
+              <label style="font-weight:600;">Project Description:</label>
+              <textarea id="project_description" name="project_description" rows="4"
+                        placeholder="Short project summary"
+                        style="width:100%; padding:10px; border-radius:6px; 
+                              border:1px solid #ccc;"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:18px;">
+              <label style="font-weight:600;">Room Type:</label>
+              <input type="text" id="room_type" name="room_type" required 
+                    placeholder="e.g. Kitchen, Bedroom"
+                    style="width:100%; padding:10px; border-radius:6px; 
+                            border:1px solid #ccc;">
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:10px;">
+              <button type="button" id="closeModal"
+                      style="background:#e5e7eb; color:#111; border:none; 
+                            padding:10px 16px; border-radius:6px; cursor:pointer;">
+                  Cancel
+              </button>
+
+              <button type="submit"
+                      style="background:#059669; color:white; border:none; 
+                            padding:10px 20px; border-radius:6px; cursor:pointer;">
+                  Add Project
+              </button>
+            </div>
+
+          </form>
+
+      </div>
+    </div>
+
+
+
+</main>
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const actionButtons = document.querySelectorAll('.btn-action');
-    actionButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const bookingId = button.dataset.bookingId;
-            const action = button.dataset.action;
+document.addEventListener("DOMContentLoaded", () => {
+    const modal = document.getElementById("addProjectModal");
+    const openBtn = document.getElementById("openAddProjectModal");
+    const closeBtn = document.getElementById("closeModal");
 
-            if (action === 'chat') {
-                alert('Chat feature coming soon!');
-                return;
-            }
-            updateBookingStatus(bookingId, action);
-        });
-    });
+    openBtn.onclick = () => modal.style.display = "flex";
+    closeBtn.onclick = () => modal.style.display = "none";
 
-    document.addEventListener("DOMContentLoaded", function () {
-        const searchInput = document.getElementById("dashboard-search");
+    window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
 
-        searchInput.addEventListener("input", function () {
-            let query = searchInput.value.trim();
+    // FORM SUBMIT HANDLER
+    document.getElementById("addProjectForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-            if (query.length === 0) {
-                document.getElementById("search-results").innerHTML = "";
-                return;
-            }
+        let formData = new FormData();
+        formData.append("project_title", project_title.value);
+        formData.append("project_description", project_description.value);
+        formData.append("room_type", room_type.value);
 
-            fetch(`/designer/search?q=${query}`)
-                .then(response => response.json())
-                .then(data => {
-                    let output = "";
+        if (image_file.files[0]) formData.append("image_file", image_file.files[0]);
+        else if (image_url.value.trim()) formData.append("image_url", image_url.value.trim());
+        else return alert("Upload image or paste URL");
 
-                    if (data.length === 0) {
-                        output = "<p>No results found.</p>";
-                    } else {
-                        data.forEach(item => {
-                            if (item.type === "project") {
-                                output += `
-                                    <div class="search-item">
-                                        <strong>${item.name}</strong>  
-                                        <br><small>Client: ${item.client}</small>  
-                                        <br><small>Status: ${item.status}</small>
-                                    </div>`;
-                            }
+        const res = await fetch("/designer/portfolio/add", { method:"POST", body: formData });
+        const data = await res.json();
 
-                            if (item.type === "client") {
-                                output += `
-                                    <div class="search-item">
-                                        <strong>${item.name}</strong>
-                                    </div>`;
-                            }
-                        });
-                    }
+        if (data.success) {
+            alert("Project added!");
 
-                    document.getElementById("search-results").innerHTML = output;
-                });
-        });
-    });
+            const slider = document.querySelector(".portfolio-scroll-grid");
+            const card = document.createElement("div");
+            card.className = "portfolio-item";
+            card.innerHTML = `
+                <img src="${data.project.image_url}">
+                <p>${data.project.project_title}</p>
+                <small>${data.project.room_type}</small>
+            `;
+            slider.appendChild(card);
 
-
-    async function updateBookingStatus(bookingId, newStatus) {
-        const badge = document.getElementById(`badge-${bookingId}`);
-        const actionContainer = document.getElementById(`actions-${bookingId}`);
-        try {
-            const response = await fetch(`/api/booking/update/${bookingId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to update status');
-            }
-            const result = await response.json();
-            if (result.status === 'success') {
-                badge.textContent = result.new_status;
-                badge.className = `badge ${result.new_status}`; 
-                if (actionContainer) {
-                    actionContainer.style.display = 'none';
-                }
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert(`An error occurred: ${error.message}`);
+            modal.style.display = "none";
+            document.getElementById("addProjectForm").reset();
         }
-    }
+    });
 });
 </script>
 {% endblock %}
