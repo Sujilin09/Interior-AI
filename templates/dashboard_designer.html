@@ -355,6 +355,50 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = document.getElementById("dashboard-search");
+
+        searchInput.addEventListener("input", function () {
+            let query = searchInput.value.trim();
+
+            if (query.length === 0) {
+                document.getElementById("search-results").innerHTML = "";
+                return;
+            }
+
+            fetch(`/designer/search?q=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    let output = "";
+
+                    if (data.length === 0) {
+                        output = "<p>No results found.</p>";
+                    } else {
+                        data.forEach(item => {
+                            if (item.type === "project") {
+                                output += `
+                                    <div class="search-item">
+                                        <strong>${item.name}</strong>  
+                                        <br><small>Client: ${item.client}</small>  
+                                        <br><small>Status: ${item.status}</small>
+                                    </div>`;
+                            }
+
+                            if (item.type === "client") {
+                                output += `
+                                    <div class="search-item">
+                                        <strong>${item.name}</strong>
+                                    </div>`;
+                            }
+                        });
+                    }
+
+                    document.getElementById("search-results").innerHTML = output;
+                });
+        });
+    });
+
+
     async function updateBookingStatus(bookingId, newStatus) {
         const badge = document.getElementById(`badge-${bookingId}`);
         const actionContainer = document.getElementById(`actions-${bookingId}`);

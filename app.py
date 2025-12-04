@@ -740,6 +740,72 @@ def add_portfolio_item():
         print(f"❌ Error adding project: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
+
+# searching the clients and projects 
+
+@app.route("/designer/search", methods=["GET"])
+@login_required
+def designer_search():
+    query = request.args.get("q", "").strip().lower()
+    user = session["user"]
+    designer_id = user["id"]
+
+    if not query:
+        return jsonify([])
+
+    results = []
+
+    # ------- Search portfolio projects in Supabase -------
+    try:
+        response = (
+            supabase.table("designer_portfolio")
+            .select("*")
+            .ilike("project_title", f"%{query}%")
+            .eq("designer_id", designer_id)
+            .execute()
+        )
+
+        portfolio_results = response.data
+
+        for p in portfolio_results:
+            results.append({
+                "type": "portfolio_project",
+                "title": p["project_title"],
+                "room_type": p.get("room_type", ""),
+                "description": p.get("project_description", ""),
+                "image": p.get("image_url", ""),
+                "id": p["id"]
+            })
+
+    except Exception as e:
+        print("Portfolio search error:", e)
+
+    # ------- Search clients from bookings/messages (IF you have that table) -------
+    try:
+        response_clients = (
+            supabase.table("messages")
+            .select("*")
+            .ilike("sender_name", f"%{query}%")
+            .or_(f"receiver_name.ilike.%{query}%")
+            .execute()
+        )
+
+        clients = response_clients.data
+
+        for c in clients:
+            results.append({
+                "type": "client",
+                "name": c["sender_name"],
+                "id": c["id"]
+            })
+
+    except Exception as e:
+        print("Client search error:", e)
+
+    return jsonify(results)
+
+
+
 # ... (add this near your other routes, like user_dashboard)
 
 @app.route("/browse_designers")
