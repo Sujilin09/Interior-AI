@@ -4,240 +4,308 @@
 
 {% block head %}
 <style>
-    /* VARIABLES (Optional but recommended for consistency) */
-    :root {
-        --primary-color: #059669; /* Your current green */
-        --accent-color: #2563EB; /* A nice blue for focus */
-        --danger-color: #EF4444; /* Red for over budget */
-        --card-bg: #fff;
-        --border-color: #d1d5db; /* Light gray border */
-        --text-color: #374151;
+    /* ------------------------------------------------------------------- */
+    /* GLOBAL STYLES */
+    /* ------------------------------------------------------------------- */
+    .main-content {
+        max-width: 1200px;
+        width: 95%;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+        font-family: 'Inter', sans-serif;
     }
 
-    /* GENERAL ENHANCEMENTS */
     .estimator-card {
-        background: var(--card-bg);
-        border-radius: 12px; /* Slightly more rounded */
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Stronger, softer shadow */
-        padding: 2rem; /* More internal space */
-        margin-bottom: 2rem;
-        border: 1px solid var(--border-color); /* Subtle border for definition */
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e5e7eb;
     }
 
-    /* FORM ELEMENTS */
+    /* ------------------------------------------------------------------- */
+    /* INPUT GRID */
+    /* ------------------------------------------------------------------- */
     .estimator-form label {
-        font-weight: 600; /* Bolder label for readability */
-        color: var(--text-color);
-        display: block; /* Ensure label takes full width */
-        margin-top: 1rem; /* More space between fields */
+        font-weight: 600;
+        color: #374151;
+        display: block;
         margin-bottom: 0.25rem;
+        font-size: 0.85rem;
     }
+
     .estimator-form input,
     .estimator-form select {
         width: 100%;
-        padding: 0.8rem 1rem; /* Increased padding */
-        border: 1px solid var(--border-color);
-        border-radius: 6px; /* Slightly more rounded */
-        box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); /* Subtle inner shadow */
-        transition: border-color 0.2s, box-shadow 0.2s;
-        font-family: inherit;
-        font-size: 1rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        background-color: #f9fafb;
+        transition: border-color 0.15s;
     }
-    /* FOCUS STATE ENHANCEMENT (Crucial for UX) */
+
     .estimator-form input:focus,
     .estimator-form select:focus {
-        border-color: var(--accent-color);
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3); /* Blue focus ring */
+        border-color: #2563EB;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         outline: none;
+        background-color: #fff;
     }
 
-    /* BUTTON */
     .btn-estimate {
-        margin-top: 1.5rem;
-        font-size: 1.1rem;
-        font-weight: 700;
-        letter-spacing: 0.5px;
+        background-color: #059669;
+        color: white;
+        padding: 0.7rem 2rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        min-width: 200px;
+    }
+    .btn-estimate:hover:not(:disabled) { background-color: #047857; }
+    .btn-estimate:disabled { background-color: #9ca3af; cursor: not-allowed; }
+
+    /* ------------------------------------------------------------------- */
+    /* RESULTS & PROGRESS BAR FIXES */
+    /* ------------------------------------------------------------------- */
+    .result-panel {
+        animation: fadeIn 0.3s ease-out;
     }
 
-    /* RESULT PANEL */
-    .result-panel {
-        margin-top: 2rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid var(--border-color); /* Separator line */
+    .summary-bar {
+        background: #f3f4f6;
+        border-radius: 8px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e5e7eb;
     }
-    .result-panel h4 {
-        margin-top: 0.5rem;
-        margin-bottom: 0.5rem;
-    }
-    #estimatedCost {
-        color: var(--primary-color);
-        font-size: 1.8rem;
-    }
+
+    .summary-item h4 { margin: 0; font-size: 0.85rem; color: #6b7280; text-transform: uppercase; }
+    .summary-item p { margin: 0; font-size: 1.5rem; font-weight: 700; color: #111827; }
     
-    /* PROGRESS BAR ENHANCEMENTS */
+    .text-green { color: #059669 !important; }
+    .text-red { color: #DC2626 !important; }
+
+    /* FIXED PROGRESS BAR STYLES */
+    .progress-container {
+        margin-bottom: 1.5rem;
+    }
     .progress {
-        height: 14px; /* Slightly thinner */
-        background-color: #e5e7eb;
-        border-radius: 7px;
-        margin: 0.75rem 0 0.5rem 0; /* Adjusted spacing */
+        height: 12px; /* Made slightly thicker for visibility */
+        background-color: #e5e7eb; /* Light gray background */
+        border-radius: 6px;
         overflow: hidden;
+        position: relative;
     }
     .progress-bar {
         height: 100%;
-        background-color: var(--primary-color);
-        width: 0%;
-        transition: width 0.5s ease, background-color 0.5s ease;
+        background-color: #059669; /* Green by default */
+        width: 0%; /* Starts at 0 */
+        border-radius: 6px;
+        transition: width 1s ease-in-out; /* Smooth animation */
     }
-    .progress-bar.over-budget { /* New class for red progress bar */
-        background-color: var(--danger-color) !important;
+    .progress-bar.over-budget { 
+        background-color: #EF4444; /* Red if over budget */
     }
 
-    /* OVER BUDGET ALERT */
-    .alert-over {
-        background-color: #fef2f2; /* Lighter red background */
-        color: var(--danger-color);
-        border-left: 4px solid var(--danger-color);
+    .results-split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+    @media (max-width: 768px) { .results-split { grid-template-columns: 1fr; } }
+
+    #breakdownList {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    #breakdownList li {
+        display: flex;
+        justify-content: space-between;
         padding: 0.75rem 1rem;
-        margin-top: 1rem;
-        border-radius: 4px;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 0.9rem;
+        color: #374151;
+    }
+    #breakdownList li:last-child { border-bottom: none; background-color: #f9fafb; font-weight: 600; }
+
+    #generatedImage {
+        width: 100%;
+        height: 100%;
+        min-height: 250px;
+        background-color: #f3f4f6;
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e5e7eb;
+    }
+    #generatedImage img { width: 100%; height: 100%; object-fit: cover; }
+
+    .alert-over {
+        background-color: #FEF2F2;
+        color: #991B1B;
+        border: 1px solid #FECACA;
+        padding: 0.75rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        text-align: center;
         font-weight: 600;
     }
 
-    /* BREAKDOWN LIST */
-    #breakdownList {
-        list-style: none; /* Remove bullet points */
-        padding-left: 0;
-        margin-top: 1rem;
+    .loading-spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid #e5e7eb;
+        border-top-color: #059669;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 8px;
     }
-    #breakdownList li {
-        display: flex; /* Use flexbox for spacing */
-        justify-content: space-between;
-        padding: 0.4rem 0;
-        border-bottom: 1px dotted #e5e7eb; /* Subtle line separator */
-        font-size: 0.95rem;
-    }
-    #breakdownList li:last-child {
-        border-bottom: none;
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* IMAGE PREVIEW */
-    #generatedImage {
-        overflow: hidden; 
-        box-shadow: 0 5px 15px rgba(0,0,0,0.15); 
-        margin-top: 1.5rem;
-        border-radius: 10px;
-    }
-    #generatedImage img {
-        width: 100%;
-        border-radius: 10px;
-        transition: transform 0.3s ease-in-out; 
-        display: block;
-    }
-    #generatedImage img:hover {
-        transform: scale(1.02);
-    }
-    /* Simple CSS for loading state text/spinner - assuming you have bootstrap classes or similar */
-    .loading-text {
-        color: var(--accent-color);
-        font-weight: 500;
-    }
+    h3 { margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #111827; font-weight: 700; }
+    .subtitle { margin: 0 0 1.5rem 0; color: #6b7280; font-size: 0.95rem; }
+
 </style>
 {% endblock %}
 
 {% block content %}
 <main class="main-content">
-    <section style="margin-top:0;">
-        <div class="section-header">
-            <h3>Budget Estimator</h3>
-        </div>
+    
+    <div class="mb-6 text-center">
+        <h3>Budget Estimator</h3>
+        <p class="subtitle">Calculate renovation costs and visualize your design.</p>
+    </div>
 
-        <div class="estimator-card">
-            <form id="budgetForm" class="estimator-form">
-
-                <label for="location">Location / City</label>
-                <select id="location" required>
-                    <option value="">Select</option>
-                    <option value="Bangalore">Bangalore</option>
-                    <option value="Mumbai">Mumbai</option>
-                    <option value="Delhi">Delhi</option>
-                </select>
-
-                <label for="area">Area (sq.ft.)</label>
-                <input type="number" id="area" placeholder="e.g. 1100" required>
-
-                <label for="homeType">Home Type</label>
-                <select id="homeType" required>
-                    <option value="">Select</option>
-                    <option value="1BHK">1 BHK</option>
-                    <option value="2BHK">2 BHK</option>
-                    <option value="3BHK">3 BHK</option>
-                    <option value="Villa">Villa</option>
-                </select>
-
-                <label for="style">Design Style</label>
-                <select id="style" required>
-                    <option value="">Select</option>
-                    <option value="Minimal">Minimal</option>
-                    <option value="Modern">Modern</option>
-                    <option value="Luxury">Luxury</option>
-                </select>
-
-                <label for="material">Material Quality</label>
-                <select id="material" required>
-                    <option value="">Select</option>
-                    <option value="Basic">Basic</option>
-                    <option value="Premium">Premium</option>
-                    <option value="Luxury">Luxury</option>
-                </select>
-
-                <label for="budgetInput">Your Budget (₹)</label>
-                <input type="number" id="budgetInput" placeholder="e.g. 2000000" required>
-
-                <label for="roomType">Room Type (for image)</label>
-                <select id="roomType">
-                    <option value="">Full Home</option>
-                    <option value="Living Room">Living Room</option>
-                    <option value="Bedroom">Bedroom</option>
-                    <option value="Kitchen">Kitchen</option>
-                </select>
-
-                <label for="colorPalette">Color Palette</label>
-                <select id="colorPalette">
-                    <option value="Neutral">Neutral</option>
-                    <option value="Warm">Warm</option>
-                    <option value="Bold">Bold</option>
-                </select>
-
-                <button type="submit" class="btn btn-secondary full-width btn-estimate">Estimate & Generate Design</button>
-                
-                <div id="loadingSpinner" style="display:none; text-align:center; margin-top:1rem;">
-                    <p class="loading-text">Calculating cost and generating design... please wait.</p>
-                    </div>
-                
-            </form>
-
-            <div id="resultSection" class="result-panel" style="display:none;">
-                <h4>Estimated Cost: <strong>₹<span id="estimatedCost">0</span></strong></h4>
-                <p>Budget: ₹<span id="userBudget">0</span></p>
-
-                <div class="progress">
-                    <div id="progressBar" class="progress-bar"></div>
+    <div class="estimator-card">
+        <form id="budgetForm" class="estimator-form">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div>
+                    <label for="location">Location</label>
+                    <select id="location" required>
+                        <option value="">Select City</option>
+                        <option value="Bangalore">Bangalore</option>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Delhi">Delhi</option>
+                    </select>
                 </div>
-
-                <p><small><span id="percentUsed">0%</span> of budget used.</small></p>
-
-                <div id="alertOverBudget" class="alert-over" style="display:none;">
-                    ⚠️ Over budget! Try changing material/style to reduce cost.
+                <div>
+                    <label for="area">Area (sq.ft.)</label>
+                    <input type="number" id="area" placeholder="e.g. 1100" required>
                 </div>
+                <div>
+                    <label for="homeType">Home Type</label>
+                    <select id="homeType" required>
+                        <option value="1BHK">1 BHK</option>
+                        <option value="2BHK" selected>2 BHK</option>
+                        <option value="3BHK">3 BHK</option>
+                        <option value="Villa">Villa</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="style">Style</label>
+                    <select id="style" required>
+                        <option value="Minimal">Minimal</option>
+                        <option value="Modern" selected>Modern</option>
+                        <option value="Luxury">Luxury</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="material">Material Quality</label>
+                    <select id="material" required>
+                        <option value="Basic">Basic</option>
+                        <option value="Premium" selected>Premium</option>
+                        <option value="Luxury">Luxury</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="budgetInput">Your Budget (₹)</label>
+                    <input type="number" id="budgetInput" placeholder="e.g. 2000000" required>
+                </div>
+                <div>
+                    <label for="roomType">Room Preview</label>
+                    <select id="roomType">
+                        <option value="Living Room" selected>Living Room</option>
+                        <option value="Bedroom">Bedroom</option>
+                        <option value="Kitchen">Kitchen</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="colorPalette">Color Palette</label>
+                    <select id="colorPalette">
+                        <option value="Neutral">Neutral</option>
+                        <option value="Warm">Warm</option>
+                        <option value="Bold">Bold</option>
+                    </select>
+                </div>
+            </div>
 
-                <h5>Breakdown</h5>
-                <ul id="breakdownList"></ul>
+            <div class="mt-8 flex flex-col items-center">
+                <button type="submit" class="btn-estimate">Estimate & Generate</button>
+                <div id="loadingSpinner" style="display:none; margin-top:1rem; color:#059669; font-size:0.9rem;">
+                    <div class="loading-spinner"></div> Analyzing market rates & generating AI design...
+                </div>
+            </div>
+        </form>
+    </div>
 
-                <h4 style="margin-top:1.5rem;">Generated Design Preview</h4>
-                <div id="generatedImage"></div>
+    <div id="resultSection" class="estimator-card result-panel" style="display:none;">
+        
+        <div class="summary-bar">
+            <div class="summary-item">
+                <h4>Your Budget</h4>
+                <p>₹<span id="userBudgetDisplay">0</span></p>
+            </div>
+            <div class="summary-item text-right">
+                <h4>Estimated Cost</h4>
+                <p id="estimatedCostDisplay" class="text-green">₹0</p>
             </div>
         </div>
-    </section>
+
+        <div class="progress-container">
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                <span>Budget Usage</span>
+                <span id="percentUsed">0%</span>
+            </div>
+            <div class="progress">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <div id="alertOverBudget" class="alert-over" style="display:none;">
+                ⚠️ Estimate exceeds your budget! Consider adjusting materials or style.
+            </div>
+        </div>
+
+        <div class="results-split">
+            <div>
+                <h4 class="text-lg font-bold text-gray-800 mb-3">Cost Breakdown</h4>
+                <ul id="breakdownList"></ul>
+            </div>
+            <div>
+                <h4 class="text-lg font-bold text-gray-800 mb-3">Design Concept</h4>
+                <div id="generatedImage">
+                    <span class="text-gray-400 text-sm">Image will appear here</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </main>
 
 <script>
@@ -246,26 +314,26 @@ document.getElementById('budgetForm').addEventListener('submit', async function(
     
     const btnEstimate = document.querySelector('.btn-estimate');
     const loadingSpinner = document.getElementById('loadingSpinner');
-    const progressBar = document.getElementById('progressBar');
+    const resultSection = document.getElementById('resultSection');
     
-    // --- START LOADING STATE ---
+    // UI Loading State
     btnEstimate.disabled = true;
-    btnEstimate.textContent = "Processing...";
     loadingSpinner.style.display = 'block';
-    document.getElementById('resultSection').style.display = 'none'; // Hide results while loading
-    // ---------------------------
+    
+    // Reset progress bar before new calculation
+    document.getElementById('progressBar').style.width = '0%';
+    resultSection.style.display = 'none';
 
     const payload = {
-    location: document.getElementById("location").value,
-    area: parseFloat(document.getElementById("area").value),
-    home_type: document.getElementById("homeType").value,
-    style: document.getElementById("style").value,
-    material: document.getElementById("material").value,
-    user_budget: parseFloat(document.getElementById("budgetInput").value),
-    room_type: document.getElementById("roomType").value,
-    color_palette: document.getElementById("colorPalette").value
-};
-
+        location: document.getElementById("location").value,
+        area: parseFloat(document.getElementById("area").value),
+        home_type: document.getElementById("homeType").value,
+        style: document.getElementById("style").value,
+        material: document.getElementById("material").value,
+        user_budget: parseFloat(document.getElementById("budgetInput").value),
+        room_type: document.getElementById("roomType").value,
+        color_palette: document.getElementById("colorPalette").value
+    };
 
     try {
         const response = await fetch('/api/estimate_generate', {
@@ -275,47 +343,74 @@ document.getElementById('budgetForm').addEventListener('submit', async function(
         });
 
         const data = await response.json();
+        
         if (!data.success) {
-            alert("Failed to estimate! Error: " + data.error);
+            alert("Error: " + data.error);
             return;
         }
 
-        // update UI
-        document.getElementById('estimatedCost').textContent = data.estimated_cost.toLocaleString();
-        userBudget.textContent = payload.user_budget.toLocaleString();
-
-        // percent calculation and color change
-        const percent = Math.min(100, (data.estimated_cost / payload.user_budget * 100)).toFixed(0);
-        percentUsed.textContent = percent + "%";
-        progressBar.style.width = percent + "%";
-
-        if (data.estimated_cost > payload.user_budget) {
-            progressBar.classList.add('over-budget');
-        } else {
-            progressBar.classList.remove('over-budget');
-        }
+        // --- UPDATE UI ---
+        const estCost = data.estimated_cost;
+        const budget = payload.user_budget;
         
-        alertOverBudget.style.display = data.estimated_cost > payload.user_budget ? 'block' : 'none';
+        document.getElementById('estimatedCostDisplay').textContent = estCost.toLocaleString();
+        document.getElementById('userBudgetDisplay').textContent = budget.toLocaleString();
 
-        breakdownList.innerHTML = "";
+        // Reveal section FIRST so dimensions are calculated
+        resultSection.style.display = 'block';
+
+        // --- FIXED PROGRESS BAR LOGIC ---
+        const percent = Math.min(100, (estCost / budget * 100));
+        const percentText = (estCost / budget * 100).toFixed(0);
+        
+        document.getElementById('percentUsed').textContent = percentText + "%";
+        const progressBar = document.getElementById('progressBar');
+        
+        // Remove old classes
+        progressBar.classList.remove('over-budget');
+        const estDisplay = document.getElementById('estimatedCostDisplay');
+        estDisplay.classList.remove('text-red', 'text-green');
+        document.getElementById('alertOverBudget').style.display = 'none';
+
+        // Apply new logic
+        if (estCost > budget) {
+            progressBar.classList.add('over-budget');
+            estDisplay.classList.add('text-red');
+            document.getElementById('alertOverBudget').style.display = 'block';
+        } else {
+            estDisplay.classList.add('text-green');
+        }
+
+        // Trigger animation with a tiny delay to ensure CSS transition sees the change
+        setTimeout(() => {
+            progressBar.style.width = percent + "%";
+        }, 100);
+
+        // Update List
+        const list = document.getElementById('breakdownList');
+        list.innerHTML = "";
         Object.entries(data.breakdown).forEach(([k, v]) => {
-            breakdownList.innerHTML += `<li><span>${k}</span> <span>₹${v.toLocaleString()}</span></li>`;
+            const label = k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            list.innerHTML += `<li><span>${label}</span> <span>₹${v.toLocaleString()}</span></li>`;
         });
 
-        // image
-        generatedImage.innerHTML = `<img src="${data.image_url}" alt="generated design"/>`;
+        // Update Image
+        const imgContainer = document.getElementById('generatedImage');
+        if(data.image_url) {
+            imgContainer.innerHTML = `<img src="${data.image_url}" alt="AI Design">`;
+        } else {
+            imgContainer.innerHTML = `<span class="text-gray-500">No image generated</span>`;
+        }
 
-        resultSection.style.display = 'block';
+        // Scroll nicely
+        resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     } catch (err) {
         console.error(err);
-        alert("An unexpected network or server error occurred.");
+        alert("Server connection failed.");
     } finally {
-        // --- END LOADING STATE ---
         btnEstimate.disabled = false;
-        btnEstimate.textContent = "Estimate & Generate Design";
         loadingSpinner.style.display = 'none';
-        // -------------------------
     }
 });
 </script>

@@ -14,9 +14,9 @@ import uuid
 from supabase import create_client, Client
 from redesign_app import redesign_bp
 from collections import Counter
+from werkzeug.utils import secure_filename
 
-
-load_dotenv()
+load_dotenv(override=True)  # <--- Forces it to read the new file
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
@@ -458,75 +458,6 @@ def dashboard():
         flash("Error loading dashboard data.", "danger")
         return redirect(url_for("index"))
 
-@app.route("/designer/add_project", methods=["GET", "POST"])
-@login_required
-def add_project():
-    user = session["user"]
-    user_id = user["id"]
-    
-    if user.get("role") != "designer":
-        return redirect(url_for("user_dashboard"))
-
-    if request.method == "POST":
-        try:
-            # 2. Get Form Data (File Upload)
-            if 'image_file' not in request.files:
-                flash("No file uploaded.", "warning")
-                return redirect(request.url)
-            
-            file = request.files['image_file']
-            if file.filename == '':
-                flash("No file selected.", "warning")
-                return redirect(request.url)
-
-            if file:
-                # 3. Upload to Supabase
-                file_ext = os.path.splitext(file.filename)[1]
-                unique_filename = f"{user_id}/{uuid.uuid4()}{file_ext}"
-                bucket_name = "portfolio-images"
-                
-                file_content = file.read()
-                content_type = file.content_type
-                
-                supabase.storage.from_(bucket_name).upload(
-                    path=unique_filename,
-                    file=file_content,
-                    file_options={"content-type": content_type}
-                )
-                
-                image_url = supabase.storage.from_(bucket_name).get_public_url(unique_filename)
-
-                # 4. Save to Database
-                new_project = {
-                    "designer_id": user_id,
-                    "designer_email": user["email"],
-                    "project_title": request.form.get("project_title"),
-                    "room_type": request.form.get("room_type"),
-                    "design_style": request.form.get("design_style"),
-                    "project_description": request.form.get("description"),
-                    "image_url": image_url,
-                    "uploaded_at": datetime.now().isoformat()
-                }
-
-                supabase.table("designer_portfolio").insert(new_project).execute()
-                
-                flash("Project added successfully!", "success")
-            return redirect(url_for("designer_profile"))
-
-        except Exception as e:
-            print(f"Error adding project: {e}")
-            flash("An error occurred while saving your project.", "danger")
-
-    # THIS IS THE FIX: Pass dummy/default values for the sidebar variables
-    return render_template(
-        "add_project.html", 
-        user=user,
-        total_earnings=0,          # Prevents the crash
-        pending_earnings=0,        # Prevents the crash
-        upcoming_schedule=[],      # Prevents the crash
-        popular_styles=[],         # Prevents the crash
-        current_month=""
-    )
 
     
 @app.route("/user_dashboard")
@@ -767,6 +698,143 @@ def update_designer_profile():
     # 3. Redirect back to the profile page to show the updated data and flash message
     return redirect(url_for("designer_profile"))
 from collections import Counter, defaultdict
+
+# -------- FILE UPLOAD CONFIGURATION --------
+UPLOAD_FOLDER = os.path.join("static", "uploads")
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+
+# Create the uploads folder if it doesn’t exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    """Check if file has an allowed extension."""
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/designer/portfolio/add", methods=["POST"])
+@login_required
+def add_portfolio_item():
+    """Handles both image uploads and project data for designer portfolio."""
+    user = session.get("user")
+    if not user or user.get("role") != "designer":
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    designer_email = user["email"]
+    designer_id = user["id"]
+
+    # --- Get text fields ---
+    project_title = request.form.get("project_title")
+    project_description = request.form.get("project_description")
+    room_type = request.form.get("room_type")
+
+    # --- Get image file or URL ---
+    image_file = request.files.get("image_file")
+    image_url = request.form.get("image_url")
+
+    # --- Validate required fields ---
+    if not project_title:
+        return jsonify({"success": False, "message": "Project title is required"}), 400
+
+    if not image_file and not image_url:
+        return jsonify({"success": False, "message": "Please upload an image or provide an image URL"}), 400
+
+    # --- Handle image upload ---
+    saved_image_path = None
+    if image_file and allowed_file(image_file.filename):
+        filename = secure_filename(image_file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        image_file.save(filepath)
+        saved_image_path = f"/{filepath}"  # Accessible as /static/uploads/filename.jpg
+    elif image_url:
+        saved_image_path = image_url
+
+    # --- Create new project entry ---
+    new_project = {
+        "designer_id": designer_id,
+        "designer_email": designer_email,
+        "project_title": project_title,
+        "project_description": project_description,
+        "room_type": room_type,
+        "image_url": saved_image_path,
+        "uploaded_at": datetime.now().isoformat(),
+    }
+
+    try:
+        response = supabase.table("designer_portfolio").insert(new_project).execute()
+        if response.data:
+            return jsonify({"success": True, "project": response.data[0]})
+        else:
+            return jsonify({"success": False, "message": "Insert failed"}), 500
+
+    except Exception as e:
+        print(f"❌ Erri gave you add route or adding project: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+# searching the clients and projects 
+
+@app.route("/designer/search", methods=["GET"])
+@login_required
+def designer_search():
+    query = request.args.get("q", "").strip().lower()
+    user = session["user"]
+    designer_id = user["id"]
+
+    if not query:
+        return jsonify([])
+
+    results = []
+
+    # ------- Search portfolio projects in Supabase -------
+    try:
+        response = (
+            supabase.table("designer_portfolio")
+            .select("*")
+            .ilike("project_title", f"%{query}%")
+            .eq("designer_id", designer_id)
+            .execute()
+        )
+
+        portfolio_results = response.data
+
+        for p in portfolio_results:
+            results.append({
+                "type": "portfolio_project",
+                "title": p["project_title"],
+                "room_type": p.get("room_type", ""),
+                "description": p.get("project_description", ""),
+                "image": p.get("image_url", ""),
+                "id": p["id"]
+            })
+
+    except Exception as e:
+        print("Portfolio search error:", e)
+
+    # ------- Search clients from bookings/messages (IF you have that table) -------
+    try:
+        response_clients = (
+            supabase.table("messages")
+            .select("*")
+            .ilike("sender_name", f"%{query}%")
+            .or_(f"receiver_name.ilike.%{query}%")
+            .execute()
+        )
+
+        clients = response_clients.data
+
+        for c in clients:
+            results.append({
+                "type": "client",
+                "name": c["sender_name"],
+                "id": c["id"]
+            })
+
+    except Exception as e:
+        print("Client search error:", e)
+
+    return jsonify(results)
+
+
 
 @app.route("/designer/analytics")
 @login_required

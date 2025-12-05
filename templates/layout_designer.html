@@ -25,6 +25,33 @@
         .badge.declined { background-color: #fee2e2; color: #991b1b; }
 
         .card-actions { margin-top: 1rem; display: flex; gap: 10px; }
+
+        .search-results-box {
+            position: absolute;
+            top: 48px;
+            right: 0;
+            width: 330px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 0;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            z-index: 5000 !important;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .search-item {
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .search-item:hover {
+            background: #f3f4f6;
+        }
     </style>
 
     {% block head %}{% endblock %}
@@ -39,9 +66,10 @@
                 <a href="{{ url_for('designer_profile') }}">Portfolio</a>
             </div>
             <div class="nav-right">
-                <div class="search-bar">
+                    <div class="search-bar" style="position: relative;">
                     <i class='bx bx-search'></i>
-                    <input type="text" placeholder="Search clients, projects...">
+                    <input id="globalSearch" type="text" placeholder="Search clients, projects...">
+                    <div id="searchResults" class="search-results-box"></div>
                 </div>
                 <i class='bx bx-bell nav-icon'></i>
                 <a href="{{ url_for('logout') }}" class="nav-icon" title="Logout"><i class='bx bx-log-out-circle'></i></a>
@@ -57,7 +85,7 @@
                 <li><a href="{{ url_for('designer_profile') }}"><i class='bx bx-user-circle'></i> My Portfolio</a></li>
                 <li><a href="{{ url_for('designer_analytics') }}"><i class='bx bx-bar-chart-alt-2'></i> Analytics</a></li>
                 <li><a href="#"><i class='bx bx-calendar-check'></i> My Bookings</a></li>
-                <li><a href="#"><i class='bx bx-wallet'></i> Earnings</a></li>
+                <!-- <li><a href="#"><i class='bx bx-wallet'></i> Earnings</a></li> -->
             </ul>
         </aside>
 
@@ -124,52 +152,146 @@
 
     </div>
     
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const actionButtons = document.querySelectorAll('.btn-action');
-        actionButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                e.preventDefault(); // Important for buttons inside forms
-                const bookingId = button.dataset.bookingId;
-                const action = button.dataset.action;
+<script>
+document.addEventListener("DOMContentLoaded", () => {
 
-                if (action === 'chat') {
-                    alert('Chat feature coming soon!');
-                    return;
-                }
-                updateBookingStatus(bookingId, action);
-            });
-        });
+    /* ------------------------------------------------------
+       CLIENT REQUEST STATUS BUTTONS (unchanged)
+    ------------------------------------------------------*/
+    document.querySelectorAll('.btn-action').forEach(button => {
+        button.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const bookingId = button.dataset.bookingId;
+            const action = button.dataset.action;
 
-        async function updateBookingStatus(bookingId, newStatus) {
+            if (action === "chat") {
+                alert("Chat feature coming soon!");
+                return;
+            }
+
             const badge = document.getElementById(`badge-${bookingId}`);
-            const actionContainer = document.getElementById(`actions-${bookingId}`);
+            const actions = document.getElementById(`actions-${bookingId}`);
+
             try {
                 const response = await fetch(`/api/booking/update/${bookingId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus })
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ status: action })
                 });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to update status');
+
+                const data = await response.json();
+                if (data.status === "success") {
+                    badge.textContent = data.new_status;
+                    badge.className = `badge ${data.new_status}`;
+                    actions.style.display = "none";
                 }
-                const result = await response.json();
-                if (result.status === 'success') {
-                    badge.textContent = result.new_status;
-                    badge.className = `badge ${result.new_status}`; 
-                    if (actionContainer) {
-                        actionContainer.style.display = 'none';
-                    }
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert(`An error occurred: ${error.message}`);
+
+            } catch (err) {
+                console.error(err);
             }
+        });
+    });
+
+    /* ------------------------------------------------------
+       GLOBAL SEARCH BAR — CLEAN & WORKING
+    ------------------------------------------------------*/
+    const searchInput = document.getElementById("globalSearch");
+    const resultsBox  = document.getElementById("searchResults");
+
+    searchInput.addEventListener("input", () => {
+        const q = searchInput.value.trim().toLowerCase();
+        resultsBox.innerHTML = "";
+
+        if (!q) {
+            resultsBox.style.display = "none";
+            return;
+        }
+
+        let results = [];
+
+        /* --- Search Projects --- */
+        document.querySelectorAll(".portfolio-item").forEach(card => {
+            const title = (card.querySelector("p")?.innerText || "").toLowerCase();
+            const room  = (card.querySelector("small")?.innerText || "").toLowerCase();
+
+            if (title.includes(q) || room.includes(q)) {
+                results.push({ type: "Project", text: title });
+            }
+        });
+
+        /* --- Search Client Requests --- */
+        document.querySelectorAll(".sidebar-right .card:first-child div").forEach(block => {
+            const note = (block.querySelector("p")?.innerText || "").toLowerCase();
+            const name = (block.querySelector("small")?.innerText || "").toLowerCase();
+
+            if (note.includes(q) || name.includes(q)) {
+                results.push({ type: "Client", text: note });
+            }
+        });
+
+        /* --- Display Results --- */
+        if (results.length === 0) {
+            resultsBox.innerHTML = `<div class="search-item">No results found</div>`;
+        } else {
+            results.forEach(r => {
+                const item = document.createElement("div");
+                item.className = "search-item";
+                item.innerHTML = `<strong>${r.type}:</strong> ${r.text}`;
+                item.addEventListener("click", () => handleSearchClick(r));
+                resultsBox.appendChild(item);
+            });
+        }
+
+        resultsBox.style.display = "block";
+    });
+
+    /* Hide dropdown when clicking outside */
+    document.addEventListener("click", (e) => {
+        if (!e.target.closest(".search-bar")) {
+            resultsBox.style.display = "none";
         }
     });
-    </script>
+
+    /* ------------------------------------------------------
+       HANDLERS FOR CLICKING RESULTS
+    ------------------------------------------------------*/
+    function handleSearchClick(result) {
+        resultsBox.style.display = "none";
+        searchInput.value = "";
+
+        if (result.type === "Project") scrollToProject(result.text);
+        if (result.type === "Client") scrollToClient(result.text);
+    }
+
+    /* --- Scroll to Project --- */
+    function scrollToProject(text) {
+        document.querySelectorAll(".portfolio-item").forEach(card => {
+            const title = (card.querySelector("p")?.innerText || "").toLowerCase();
+            if (title.includes(text)) {
+                card.scrollIntoView({ behavior: "smooth", block: "center" });
+                card.style.boxShadow = "0 0 0 3px #059669";
+                setTimeout(() => card.style.boxShadow = "none", 1500);
+            }
+        });
+    }
+
+    /* --- Scroll to Client Request --- */
+    function scrollToClient(text) {
+        document.querySelectorAll(".sidebar-right .card:first-child div").forEach(block => {
+            const note = (block.querySelector("p")?.innerText || "").toLowerCase();
+            if (note.includes(text)) {
+                block.scrollIntoView({ behavior: "smooth", block: "center" });
+                block.style.background = "#d1fae5";
+                setTimeout(() => block.style.background = "transparent", 1500);
+            }
+        });
+    }
+
+});
+</script>
+
     
     {% block scripts %}{% endblock %}
 </body>
+
 </html>
