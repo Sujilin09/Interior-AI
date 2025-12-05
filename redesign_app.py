@@ -496,24 +496,23 @@ def generate_room_designs():
         }), 500
 
 
-# This is inside redesign_app.py
-
 @redesign_bp.route("/api/designs/<string:design_id>/like", methods=['POST'])
 def like_design(design_id: str):
-    """
-    Toggle like status and save to Supabase.
-    This is now smart enough to handle un-liking
-    even if the app was restarted.
-    """
-    
+    """Toggle like status and save to Supabase."""
+
     if "user" not in session:
         return jsonify({"detail": "Authentication required."}), 401
-    
+
     user = session["user"]
     user_id = user["id"]
 
+    # Find the design in our temporary database
+    design_data = DESIGN_DATABASE.get(design_id)
+    if not design_data:
+        return jsonify({"detail": "Design not found or app was restarted."}), 404
+
     try:
-        # 1. ALWAYS check the real database first.
+        # Check if it's already liked in the database
         existing_like = supabase.table("saved_ai_designs") \
             .select("id") \
             .eq("user_id", user_id) \
@@ -521,27 +520,13 @@ def like_design(design_id: str):
             .execute()
 
         if existing_like.data:
-            # 2. IT EXISTS, SO UN-LIKE (DELETE)
-            # This is what you want to happen on your favorites page.
+            # UN-like (DELETE)
             supabase.table("saved_ai_designs").delete().eq("id", existing_like.data[0]["id"]).execute()
             print(f"User {user_id} UN-liked AI design {design_id}")
-            
-            # Also update temporary DB if it's there
-            if design_id in DESIGN_DATABASE:
-                DESIGN_DATABASE[design_id]["liked"] = False
-                
             return jsonify({"status": "unliked", "design_id": design_id, "liked": False})
-        
-        else:
-            # 3. IT DOES NOT EXIST, SO LIKE (INSERT)
-            # This only works if it's in our temporary DB
-            design_data = DESIGN_DATABASE.get(design_id)
-            if not design_data:
-                # This was your 404 error!
-                print(f"User {user_id} tried to like {design_id} but it's not in memory.")
-                return jsonify({"detail": "Design data lost. Please re-generate to like."}), 404
 
-            # If we found it in memory, save it to the database
+        else:
+            # LIKE (INSERT)
             new_like = {
                 "user_id": user_id,
                 "design_id": design_data["design_id"],
@@ -550,7 +535,6 @@ def like_design(design_id: str):
             }
             supabase.table("saved_ai_designs").insert(new_like).execute()
             print(f"User {user_id} LIKED AI design {design_id}")
-            DESIGN_DATABASE[design_id]["liked"] = True
             return jsonify({"status": "liked", "design_id": design_id, "liked": True})
 
     except Exception as e:
@@ -668,3 +652,136 @@ def designer_profile():
 
     # 4) GET — render the edit template. Make sure the template exists and extends layout
     return render_template("edit_designer_profile.html", designer=designer, user=user)
+<<<<<<< HEAD
+=======
+#####Recommendation#####
+# In redesign_app.py (Replace the previous implementation of recommend_designers)
+#################### recommendation
+# --- File: redesign_app.py (Add this route) ---
+@redesign_bp.route("/designer/profile/<string:designer_id>", methods=["GET"])
+def designer_profile_public(designer_id: str):
+    """Show the public-facing profile and portfolio for a designer."""
+
+    try:
+        # Fetch the designer's main details
+        response = supabase.table("designers").select("*").eq("id", designer_id).limit(1).execute()
+        if not response.data:
+            flash(f"Designer with ID {designer_id} not found.", "error")
+            return redirect(url_for("redesign.upload_wizard"))
+        designer = response.data[0]
+        
+        # NOTE: In a real app, you'd also fetch their portfolio items here.
+        # portfolio_response = supabase.table("portfolio_items").select("*").eq("designer_id", designer_id).execute()
+        # portfolio = portfolio_response.data
+        
+    except Exception as e:
+        print(f"[ERROR] Could not fetch public designer profile: {e}")
+        flash("Database error fetching profile.", "error")
+        return redirect(url_for("redesign.upload_wizard"))
+
+    # Render the public-facing template (must exist as designer_portfolio_public.html)
+    # Pass a simplified 'user' object if the template relies on it for the layout.
+    user_in_session = session.get("user")
+    return render_template(
+        "designer_portfolio_public.html", 
+        designer=designer, 
+        user=user_in_session
+    )
+
+# NOTE: Ensure the template 'designer_portfolio_public.html' exists in your templates directory.
+@redesign_bp.route("/api/recommend-designers", methods=['GET', 'POST'])
+def recommend_designers():
+    """
+    Recommends designers based on user preferences (room type and styles),
+    using array matching against the database schema.
+    """
+    try:
+        if request.method == 'POST':
+            data = request.get_json()
+        elif request.method == 'GET':
+            # Data comes from URL query parameters
+            data = {
+                'room_type': request.args.get('room_type'),
+                'styles': request.args.getlist('styles') or [request.args.get('styles')] # Handles single or multiple styles
+            }
+
+        room_type = data.get('room_type') 
+        # Convert styles from a string list if necessary, or just use the list from POST/args
+        styles = data.get('styles', [])  
+        
+        # Ensure 'styles' is a list, even if it came as a single string from the URL
+        if isinstance(styles, str):
+            styles = [styles]  # e.g., ['luxury', 'scandinavian']
+
+        if not room_type or not styles:
+            # Return an empty list instead of an error for a cleaner UI experience
+            return jsonify([]), 200 
+
+        # --- Recommendation Logic using Array Overlap (&&) ---
+        
+        # Select all necessary columns. We'll use room_specializations and design_styles
+        # which are defined as ARRAYs in the designers table.
+        # Include all necessary fields for the card display
+        query = supabase.table("designers").select("id, designer_name, studio_name, room_specializations, design_styles, years_experience, rating, total_reviews, location, budget_range_min, budget_range_max, specialisation")
+        
+        # 1. Match by Room Type (Room Specialization)
+        # The user selects only one room, so we check if that room is in the designer's array.
+        # Ensure the room type is formatted correctly for comparison (e.g., 'dining_room' vs 'Dining Room')
+        # We will assume room types are stored as lowercase/snake_case in the DB for robust matching.
+        # If the frontend uses 'Dining Room', convert it here: room_type.lower().replace(' ', '_')
+        
+        # For this example, we'll assume the room type received from the frontend is already
+        # formatted to match a potential entry in the DB's room_specializations array.
+        query = query.overlaps("room_specializations", [room_type])
+        
+        # 2. Match by Design Styles (Must match at least one selected style)
+        query = query.overlaps("design_styles", styles)
+
+        # 3. Order by rating and limit
+        response = query.order("rating", desc=True).limit(3).execute() 
+        
+        recommended_designers = response.data
+        # Format the output for the frontend
+        formatted_designers = [{
+            "id": d['id'],
+            "name": d['designer_name'], 
+            
+            # --- FIX 1: Add a 'title' field, or use 'studio' for it ---
+            # Based on image_3680a1.png, 'Residential' or 'Commercial' might be needed
+            "title": d.get('specialisation') or "Residential", 
+            
+            # --- FIX 2: Ensure 'rating' is available ---
+            "rating": round(d.get('rating', 0.0), 1),
+            "review_count": d.get('total_reviews', 0), # Added to match image_3680a1.png (e.g., 127 reviews)
+            
+            # --- FIX 3: Add 'location' and budget/price fields which are critical for the card ---
+            "location": d.get('location') or "Global", 
+            "price_min": d.get('budget_range_min') or 15000, 
+            "price_max": d.get('budget_range_max') or 50000,
+            
+            # The 'Specializes in' text comes from the 'styles' key (which is working)
+            "specializations": d['room_specializations'],
+            "styles": d['design_styles'], 
+            "experience": d['years_experience'],
+            
+            "profile_link": url_for("redesign.designer_profile_public", designer_id=d['id']),
+            "image_url": d.get('profile_image_url') or url_for('static', filename='images/designer_placeholder.png')
+            
+        } for d in recommended_designers]
+
+        return jsonify(formatted_designers)
+        
+        
+
+    except Exception as e:
+        print(f"CRITICAL Recommendation error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "detail": "Failed to fetch designer recommendations.",
+            "error_type": type(e).__name__
+        }), 500
+
+# NOTE: You will also need to ensure the following imports are present at the top of redesign_app.py:
+# from flask import url_for # Used above for profile_link and placeholder image
+>>>>>>> eadb74adbd134c76e79ec0330bcb97cc2c0aed3a

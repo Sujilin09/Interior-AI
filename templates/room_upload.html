@@ -47,7 +47,7 @@
         .like-button.liked .icon-stroked { display: none; }
 
         /* This is CRITICAL. We need to override the dashboard CSS 
-          to make the wizard content centered.
+            to make the wizard content centered.
         */
         .main-content-wizard {
             grid-area: main;
@@ -172,6 +172,13 @@
                 <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     </div>
 
+                <div id="designer-recommendations" class="mt-12 pt-6 border-t border-gray-200 hidden">
+                    <h2 class="text-xl font-semibold mb-4 text-center text-gray-800">Find a Designer to Bring it to Life</h2>
+                    <div id="designers-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="text-center text-gray-500 md:col-span-3">Loading recommendations...</div>
+                    </div>
+                    <p class="text-center text-sm text-gray-500 mt-4">Recommendations are based on your selected styles and room type.</p>
+                </div>
                 <div id="results-footer-buttons" class="flex justify-center items-center mt-8 hidden">
                     <button id="back-btn-4" class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 mr-4">Back to Review</button>
                     <button id="start-over-btn" class="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">Start a New Redesign</button>
@@ -182,6 +189,7 @@
     </div>
 
     <script>
+        
         document.addEventListener('DOMContentLoaded', () => {
             const state = {
                 currentStep: 1,
@@ -210,6 +218,7 @@
                     p.classList.toggle('font-medium', stepNum <= state.currentStep);
                 });
                 if (state.currentStep === 3) populateReview();
+                if (state.currentStep === 4) document.getElementById('designer-recommendations').classList.add('hidden'); // Hide designer recs initially
             };
             
             ['next-btn-1', 'next-btn-2'].forEach((id, i) => document.getElementById(id).addEventListener('click', () => goToStep(i + 2)));
@@ -282,33 +291,38 @@
             function validatePreferences() { nextBtn2.disabled = !(state.preferences.room_type && state.preferences.styles.length > 0); }
 
             // --- Step 3: Review ---
+            const toTitleCase = str => str.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
             function populateReview() {
                 document.getElementById('review-image').src = imagePreview.src;
                 const reviewContainer = document.getElementById('review-preferences');
                 const { room_type, styles, color_preferences } = state.preferences;
-                const toTitleCase = str => str.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 reviewContainer.innerHTML = `<div><p><strong class="font-medium text-green-800">Room Type:</strong> ${toTitleCase(room_type || '')}</p><p><strong class="font-medium text-green-800">Styles:</strong> ${styles.map(toTitleCase).join(', ')}</p><p><strong class="font-medium text-green-800">Colors:</strong> ${color_preferences.length > 0 ? color_preferences.map(toTitleCase).join(', ') : 'None'}</p></div>`;
             }
             
-            // --- Step 4: Generation & Results ---
+            // --- Step 4: Generation, Results, and Designer Recommendations ---
             const generateBtn = document.getElementById('generate-btn');
             const loadingState = document.getElementById('loading-state');
             const resultsGrid = document.getElementById('results-grid');
-            const resultsFooterButtons = document.getElementById('results-footer-buttons'); // Get buttons div
+            const resultsFooterButtons = document.getElementById('results-footer-buttons');
+            const designerRecommendationsDiv = document.getElementById('designer-recommendations'); // New div
+            const designersContainer = document.getElementById('designers-container'); // New container
 
             generateBtn.addEventListener('click', async () => {
                 goToStep(4);
                 
-                // Show spinner, hide buttons
+                // Show spinner, hide all results sections
                 loadingState.classList.remove('hidden');
                 resultsGrid.innerHTML = '';
-                resultsFooterButtons.classList.add('hidden'); // Hide buttons on generate
+                resultsFooterButtons.classList.add('hidden');
+                designerRecommendationsDiv.classList.add('hidden'); // Hide new section initially
                 
                 const formData = new FormData();
                 formData.append('image', state.imageFile);
                 formData.append('preferences', JSON.stringify(state.preferences));
                 
                 try {
+                    // 1. Generate Designs
                     const response = await fetch(`${API_PREFIX}/api/generate`, { method: 'POST', body: formData });
                     if (!response.ok) { 
                         const err = await response.json().catch(() => ({ detail: 'server error' })); 
@@ -316,13 +330,17 @@
                     }
                     const results = await response.json();
                     displayResults(results);
+
+                    // 2. Fetch Designer Recommendations
+                    await fetchDesigners();
+
                 } catch (error) {
                     console.error('Generation failed:', error);
                     resultsGrid.innerHTML = `<p class="text-red-500 md:col-span-2 text-center">Error: ${error.message}. Please try again.</p>`;
                 } finally {
                     // Hide spinner, show buttons
                     loadingState.classList.add('hidden');
-                    resultsFooterButtons.classList.remove('hidden'); // Show buttons when done
+                    resultsFooterButtons.classList.remove('hidden');
                 }
             });
 
@@ -335,7 +353,7 @@
                     <div class="border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white">
                         <img src="${r.image_url}" alt="AI generated ${r.style} design" class="w-full h-64 object-cover">
                         <div class="p-4">
-                            <p class="font-semibold text-green-800">${r.style.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+                            <p class="font-semibold text-green-800">${toTitleCase(r.style)}</p>
                             <p class="text-sm text-gray-500">AI-generated concept</p>
                             <div class="flex items-center justify-between mt-4">
                                 <div class="flex items-center space-x-2">
@@ -363,6 +381,71 @@
                     }
                 }));
             }
+
+            // --- New Designer Recommendation Logic (FIX APPLIED HERE) ---
+            async function fetchDesigners() {
+                designersContainer.innerHTML = '<div class="text-center text-gray-500 md:col-span-3">Finding the perfect designers...</div>';
+                designerRecommendationsDiv.classList.remove('hidden');
+
+                const stylesQuery = state.preferences.styles.join(',');
+                const roomTypeQuery = state.preferences.room_type;
+                
+                try {
+                    const response = await fetch(`${API_PREFIX}/api/recommend-designers?styles=${stylesQuery}&room_type=${roomTypeQuery}`);
+                    if (!response.ok) throw new Error('Failed to fetch designer recommendations');
+                    
+                    const designers = await response.json();
+                    
+                    if (designers.length > 0) {
+                        designersContainer.innerHTML = designers.map(designer => {
+                            // Helper to format currency (assuming INR for now)
+                            const formatCurrency = (amount) => `₹${amount.toLocaleString('en-IN')}`;
+                            const priceRange = `${formatCurrency(designer.price_min)} - ${formatCurrency(designer.price_max)}`;
+                            
+                            // Get initials for the placeholder circle
+                            const initials = designer.name ? designer.name.split(' ').map(n => n[0]).join('') : 'D';
+
+                            return `
+                                <div class="p-4 border border-gray-100 rounded-lg shadow-sm bg-white hover:shadow-md transition-shadow flex flex-col">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <img  alt="${designer.name}" class="w-12 h-12 rounded-full object-cover bg-green-100 flex items-center justify-center text-green-700 font-bold text-lg">
+                                            <div>
+                                                <p class="font-semibold text-gray-800">${designer.name}</p>
+                                                <p class="text-xs text-gray-500">${designer.title}</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-1 text-yellow-500">
+                                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.487 7.02l6.56-.955L10 0l2.953 6.065 6.56.955-4.758 4.635 1.123 6.545z"/></svg>
+                                            <span class="text-sm font-semibold text-gray-800">${designer.rating.toFixed(1)}</span>
+                                            
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4 space-y-2">
+                                        <p class="text-sm text-gray-600">
+                                            <span class="font-medium text-green-700">Specializes in:</span> ${designer.styles.map(toTitleCase).join(', ')}
+                                        </p>
+                                        <p class="text-sm text-gray-600">
+                                            <span class="font-medium text-gray-800">${priceRange}</span>
+                                            <span class="text-xs text-gray-500 block">${designer.location}</span>
+                                        </p>
+                                    </div>
+
+                                    <a href="${designer.profile_link}" target="_blank" class="mt-4 block w-full text-center px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">View Profile</a>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        designersContainer.innerHTML = `<div class="text-center text-gray-600 md:col-span-3">No designers matched your specific style preferences.</div>`;
+                    }
+
+                } catch (error) {
+                    console.error('Designer recommendation failed:', error);
+                    designersContainer.innerHTML = `<div class="text-center text-red-500 md:col-span-3">Error: Could not load designer recommendations.</div>`;
+                }
+            }
+            // --- End New Designer Recommendation Logic ---
             
             fetchPreferencesData();
             updateUI();

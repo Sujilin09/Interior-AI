@@ -15,9 +15,9 @@ import uuid
 from supabase import create_client, Client
 from redesign_app import redesign_bp
 from collections import Counter
+from werkzeug.utils import secure_filename
 
-
-load_dotenv()
+load_dotenv(override=True)  # <--- Forces it to read the new file
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
@@ -461,163 +461,166 @@ def dashboard():
         flash("Error loading dashboard data.", "danger")
         return redirect(url_for("index"))
 
-@app.route("/designer/add_project", methods=["GET", "POST"])
-@login_required
-def add_project():
-    user = session["user"]
-    user_id = user["id"]
-    
-    if user.get("role") != "designer":
-        return redirect(url_for("user_dashboard"))
-
-    if request.method == "POST":
-        try:
-            # 2. Get Form Data (File Upload)
-            if 'image_file' not in request.files:
-                flash("No file uploaded.", "warning")
-                return redirect(request.url)
-            
-            file = request.files['image_file']
-            if file.filename == '':
-                flash("No file selected.", "warning")
-                return redirect(request.url)
-
-            if file:
-                # 3. Upload to Supabase
-                file_ext = os.path.splitext(file.filename)[1]
-                unique_filename = f"{user_id}/{uuid.uuid4()}{file_ext}"
-                bucket_name = "portfolio-images"
-                
-                file_content = file.read()
-                content_type = file.content_type
-                
-                supabase.storage.from_(bucket_name).upload(
-                    path=unique_filename,
-                    file=file_content,
-                    file_options={"content-type": content_type}
-                )
-                
-                image_url = supabase.storage.from_(bucket_name).get_public_url(unique_filename)
-
-                # 4. Save to Database
-                new_project = {
-                    "designer_id": user_id,
-                    "designer_email": user["email"],
-                    "project_title": request.form.get("project_title"),
-                    "room_type": request.form.get("room_type"),
-                    "design_style": request.form.get("design_style"),
-                    "project_description": request.form.get("description"),
-                    "image_url": image_url,
-                    "uploaded_at": datetime.now().isoformat()
-                }
-
-                supabase.table("designer_portfolio").insert(new_project).execute()
-                
-                flash("Project added successfully!", "success")
-            return redirect(url_for("designer_profile"))
-
-        except Exception as e:
-            print(f"Error adding project: {e}")
-            flash("An error occurred while saving your project.", "danger")
-
-    # THIS IS THE FIX: Pass dummy/default values for the sidebar variables
-    return render_template(
-        "add_project.html", 
-        user=user,
-        total_earnings=0,          # Prevents the crash
-        pending_earnings=0,        # Prevents the crash
-        upcoming_schedule=[],      # Prevents the crash
-        popular_styles=[],         # Prevents the crash
-        current_month=""
-    )
 
     
+# @app.route("/user_dashboard")
+# @login_required
+# def user_dashboard():
+    
+#     user = session["user"]
+
+#     # Security Check: If a 'designer' lands here, send them to their correct dashboard.
+#     if user["role"] != "user":
+#         flash("Access denied. Redirecting to your dashboard.", "warning")
+#         return redirect(url_for("dashboard"))
+    
+#     # --- From here, it's ONLY homeowner logic ---
+#     email = user["email"].strip().lower()
+
+#     try:
+#         print("\n===== DASHBOARD DEBUG INFO (HOMEOWNER) =====")
+#         print(f"Logged-in user email: {email}")
+#         print("======================================")
+
+#         # Fetch homeowner record
+#         user_res = (
+#             supabase.table("user_profiles")
+#             .select("*")
+#             .filter("email", "eq", email)
+#             .limit(1)
+#             .execute()
+#         )
+#         homeowner = user_res.data[0] if user_res.data else None
+#         if not homeowner:
+#             flash("Homeowner profile not found.", "danger")
+#             print(f"No user_profile found for: {email}")
+#             return redirect(url_for("index"))
+
+#         print(f"Homeowner found: {homeowner.get('user_name', 'Unknown')}")
+
+#         # --- Placeholder Data (based on your images) ---
+#         # In a real app, you'd fetch this from Supabase, e.g.:
+#         # recent_uploads_res = supabase.table("user_projects").select("*").eq("user_id", homeowner['id']).limit(3).execute()
+#         # recent_uploads = recent_uploads_res.data or []
+#         recent_uploads = [
+#             {"name": "Living Room", "img_url": "https://placehold.co/150x150/eeeeee/cccccc?text=Living+Room"},
+#             {"name": "Bedroom", "img_url": "https://placehold.co/150x150/eeeeee/cccccc?text=Bedroom"},
+#             {"name": "Kitchen", "img_url": "https://placehold.co/150x150/eeeeee/cccccc?text=Kitchen"},
+#         ]
+
+#         # Example: Fetch AI results
+#         ai_results = [
+#             {"style": "Modern Minimalist", "match": "92%", "before_img": "https://placehold.co/300x200/ccc/fff?text=Before", "after_img": "https://placehold.co/300x200/888/fff?text=After"},
+#             {"style": "Cozy Scandinavian", "match": "88%", "before_img": "https://placehold.co/300x200/ccc/fff?text=Before", "after_img": "https://placehold.co/300x200/888/fff?text=After"},
+#             {"style": "Industrial Chic", "match": "85%", "before_img": "https://placehold.co/300x200/ccc/fff?text=Before", "after_img": "https://placehold.co/300x200/888/fff?text=After"},
+#         ]
+
+#         # Example: Fetch smart predictions
+#         smart_predictions = {
+#             "budget": "₹25K - ₹45K",
+#             "timeline": "3-5 weeks",
+#             "style_match": "92%",
+#             "trending": "Modern Minimalist"
+#         }
+
+#         # Example: Fetch recommended designers
+#         # designers_res = supabase.table("designers").select("*").limit(3).execute()
+#         # recommended_designers = designers_res.data or []
+#         recommended_designers = [
+#             {"initials": "PS", "name": "Priya Sharma", "style": "Modern & Contemporary", "rating": 4.9, "reviews": 127, "location": "Mumbai", "budget": "₹15K - ₹50K"},
+#             {"initials": "AP", "name": "Arjun Patel", "style": "Scandinavian & Minimalist", "rating": 4.8, "reviews": 89, "location": "Bangalore", "budget": "₹20K - ₹60K"},
+#             {"initials": "KR", "name": "Kavya Reddy", "style": "Traditional & Fusion", "rating": 4.9, "reviews": 156, "location": "Hyderabad", "budget": "₹18K - ₹45K", "available": True},
+#         ]
+
+#         # ---------- RENDER HOMEOWNER DASHBOARD ----------
+#         return render_template(
+#             "dashboard_homeowner.html",
+#             user=user,
+#             homeowner=homeowner,
+#             recent_uploads=recent_uploads,
+#             ai_results=ai_results,
+#             smart_predictions=smart_predictions,
+#             recommended_designers=recommended_designers
+#         )
+
+#     except Exception as e:
+#         print("HOMEOWNER DASHBOARD ERROR TRACEBACK:", e)
+#         flash(f"Error loading homeowner dashboard data: {e}", "danger")
+#         return redirect(url_for("index"))
+# # --- END NEW ROUTE ---
+
 @app.route("/user_dashboard")
 @login_required
 def user_dashboard():
-    
     user = session["user"]
-
-    # Security Check: If a 'designer' lands here, send them to their correct dashboard.
     if user["role"] != "user":
-        flash("Access denied. Redirecting to your dashboard.", "warning")
         return redirect(url_for("dashboard"))
     
-    # --- From here, it's ONLY homeowner logic ---
     email = user["email"].strip().lower()
 
-    try:
-        print("\n===== DASHBOARD DEBUG INFO (HOMEOWNER) =====")
-        print(f"Logged-in user email: {email}")
-        print("======================================")
+    # 1. Fetch Homeowner Profile
+    user_res = supabase.table("user_profiles").select("*").filter("email", "eq", email).limit(1).execute()
+    homeowner = user_res.data[0] if user_res.data else {}
 
-        # Fetch homeowner record
-        user_res = (
-            supabase.table("user_profiles")
-            .select("*")
-            .filter("email", "eq", email)
-            .limit(1)
-            .execute()
-        )
-        homeowner = user_res.data[0] if user_res.data else None
-        if not homeowner:
-            flash("Homeowner profile not found.", "danger")
-            print(f"No user_profile found for: {email}")
-            return redirect(url_for("index"))
+    # 2. Fetch Designers
+    designers_res = supabase.table("designers").select("*").limit(50).execute()
+    all_designers = designers_res.data or []
 
-        print(f"Homeowner found: {homeowner.get('user_name', 'Unknown')}")
+    # 3. Recommendation Logic
+    my_city = homeowner.get('user_city', '').strip()
+    recommended_designers = []
 
-        # --- Placeholder Data (based on your images) ---
-        # In a real app, you'd fetch this from Supabase, e.g.:
-        # recent_uploads_res = supabase.table("user_projects").select("*").eq("user_id", homeowner['id']).limit(3).execute()
-        # recent_uploads = recent_uploads_res.data or []
-        recent_uploads = [
-            {"name": "Living Room", "img_url": "https://placehold.co/150x150/eeeeee/cccccc?text=Living+Room"},
-            {"name": "Bedroom", "img_url": "https://placehold.co/150x150/eeeeee/cccccc?text=Bedroom"},
-            {"name": "Kitchen", "img_url": "https://placehold.co/150x150/eeeeee/cccccc?text=Kitchen"},
-        ]
+    for d in all_designers:
+        # Score Logic: 50 points if city matches
+        score = 50 if (d.get('location') == my_city) else 0
+        
+        # Initials generator
+        name = d.get('designer_name', 'Designer')
+        # Handle cases where name might be empty
+        parts = name.split()
+        if len(parts) >= 2:
+            initials = (parts[0][0] + parts[1][0]).upper()
+        elif parts:
+            initials = parts[0][:2].upper()
+        else:
+            initials = "D"
 
-        # Example: Fetch AI results
-        ai_results = [
-            {"style": "Modern Minimalist", "match": "92%", "before_img": "https://placehold.co/300x200/ccc/fff?text=Before", "after_img": "https://placehold.co/300x200/888/fff?text=After"},
-            {"style": "Cozy Scandinavian", "match": "88%", "before_img": "https://placehold.co/300x200/ccc/fff?text=Before", "after_img": "https://placehold.co/300x200/888/fff?text=After"},
-            {"style": "Industrial Chic", "match": "85%", "before_img": "https://placehold.co/300x200/ccc/fff?text=Before", "after_img": "https://placehold.co/300x200/888/fff?text=After"},
-        ]
+        # --- THE FIX FOR TYPE ERROR IS HERE ---
+        # We use (d.get(...) or 0) to force None to become 0
+        budget_min = d.get('budget_range_min') or 0
+        budget_display = f"₹{budget_min // 1000}k+"
 
-        # Example: Fetch smart predictions
-        smart_predictions = {
-            "budget": "₹25K - ₹45K",
-            "timeline": "3-5 weeks",
-            "style_match": "92%",
-            "trending": "Modern Minimalist"
-        }
+        recommended_designers.append({
+            "id": d['id'],
+            "initials": initials,
+            "name": name,
+            "style": d.get('design_styles', ['General'])[0] if d.get('design_styles') else "General",
+            "rating": d.get('rating') or 5.0,
+            "reviews": d.get('total_reviews') or 0,
+            "location": d.get('location') or 'Remote',
+            "budget": budget_display,
+            "score": score,
+            "available": True 
+        })
 
-        # Example: Fetch recommended designers
-        # designers_res = supabase.table("designers").select("*").limit(3).execute()
-        # recommended_designers = designers_res.data or []
-        recommended_designers = [
-            {"initials": "PS", "name": "Priya Sharma", "style": "Modern & Contemporary", "rating": 4.9, "reviews": 127, "location": "Mumbai", "budget": "₹15K - ₹50K"},
-            {"initials": "AP", "name": "Arjun Patel", "style": "Scandinavian & Minimalist", "rating": 4.8, "reviews": 89, "location": "Bangalore", "budget": "₹20K - ₹60K"},
-            {"initials": "KR", "name": "Kavya Reddy", "style": "Traditional & Fusion", "rating": 4.9, "reviews": 156, "location": "Hyderabad", "budget": "₹18K - ₹45K", "available": True},
-        ]
+    # Sort by score (highest match first)
+    recommended_designers.sort(key=lambda x: x['score'], reverse=True)
+    recommended_designers = recommended_designers[:3] # Show top 3
 
-        # ---------- RENDER HOMEOWNER DASHBOARD ----------
-        return render_template(
-            "dashboard_homeowner.html",
-            user=user,
-            homeowner=homeowner,
-            recent_uploads=recent_uploads,
-            ai_results=ai_results,
-            smart_predictions=smart_predictions,
-            recommended_designers=recommended_designers
-        )
+    # Placeholder data for other sections
+    recent_uploads = [] 
+    ai_results = []
+    smart_predictions = {"budget": "Calculating...", "timeline": "TBD", "style_match": "--", "trending": "--"}
 
-    except Exception as e:
-        print("HOMEOWNER DASHBOARD ERROR TRACEBACK:", e)
-        flash(f"Error loading homeowner dashboard data: {e}", "danger")
-        return redirect(url_for("index"))
-# --- END NEW ROUTE ---
-
+    return render_template(
+        "dashboard_homeowner.html",
+        user=user,
+        homeowner=homeowner,
+        recent_uploads=recent_uploads,
+        ai_results=ai_results,
+        smart_predictions=smart_predictions,
+        recommended_designers=recommended_designers
+    )
 
 @app.route("/logout")
 def logout():
@@ -781,6 +784,143 @@ def update_designer_profile():
 
     return redirect(url_for("designer_profile"))
 from collections import Counter, defaultdict
+
+# -------- FILE UPLOAD CONFIGURATION --------
+UPLOAD_FOLDER = os.path.join("static", "uploads")
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+
+# Create the uploads folder if it doesn’t exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    """Check if file has an allowed extension."""
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/designer/portfolio/add", methods=["POST"])
+@login_required
+def add_portfolio_item():
+    """Handles both image uploads and project data for designer portfolio."""
+    user = session.get("user")
+    if not user or user.get("role") != "designer":
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    designer_email = user["email"]
+    designer_id = user["id"]
+
+    # --- Get text fields ---
+    project_title = request.form.get("project_title")
+    project_description = request.form.get("project_description")
+    room_type = request.form.get("room_type")
+
+    # --- Get image file or URL ---
+    image_file = request.files.get("image_file")
+    image_url = request.form.get("image_url")
+
+    # --- Validate required fields ---
+    if not project_title:
+        return jsonify({"success": False, "message": "Project title is required"}), 400
+
+    if not image_file and not image_url:
+        return jsonify({"success": False, "message": "Please upload an image or provide an image URL"}), 400
+
+    # --- Handle image upload ---
+    saved_image_path = None
+    if image_file and allowed_file(image_file.filename):
+        filename = secure_filename(image_file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        image_file.save(filepath)
+        saved_image_path = f"/{filepath}"  # Accessible as /static/uploads/filename.jpg
+    elif image_url:
+        saved_image_path = image_url
+
+    # --- Create new project entry ---
+    new_project = {
+        "designer_id": designer_id,
+        "designer_email": designer_email,
+        "project_title": project_title,
+        "project_description": project_description,
+        "room_type": room_type,
+        "image_url": saved_image_path,
+        "uploaded_at": datetime.now().isoformat(),
+    }
+
+    try:
+        response = supabase.table("designer_portfolio").insert(new_project).execute()
+        if response.data:
+            return jsonify({"success": True, "project": response.data[0]})
+        else:
+            return jsonify({"success": False, "message": "Insert failed"}), 500
+
+    except Exception as e:
+        print(f"❌ Erri gave you add route or adding project: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+# searching the clients and projects 
+
+@app.route("/designer/search", methods=["GET"])
+@login_required
+def designer_search():
+    query = request.args.get("q", "").strip().lower()
+    user = session["user"]
+    designer_id = user["id"]
+
+    if not query:
+        return jsonify([])
+
+    results = []
+
+    # ------- Search portfolio projects in Supabase -------
+    try:
+        response = (
+            supabase.table("designer_portfolio")
+            .select("*")
+            .ilike("project_title", f"%{query}%")
+            .eq("designer_id", designer_id)
+            .execute()
+        )
+
+        portfolio_results = response.data
+
+        for p in portfolio_results:
+            results.append({
+                "type": "portfolio_project",
+                "title": p["project_title"],
+                "room_type": p.get("room_type", ""),
+                "description": p.get("project_description", ""),
+                "image": p.get("image_url", ""),
+                "id": p["id"]
+            })
+
+    except Exception as e:
+        print("Portfolio search error:", e)
+
+    # ------- Search clients from bookings/messages (IF you have that table) -------
+    try:
+        response_clients = (
+            supabase.table("messages")
+            .select("*")
+            .ilike("sender_name", f"%{query}%")
+            .or_(f"receiver_name.ilike.%{query}%")
+            .execute()
+        )
+
+        clients = response_clients.data
+
+        for c in clients:
+            results.append({
+                "type": "client",
+                "name": c["sender_name"],
+                "id": c["id"]
+            })
+
+    except Exception as e:
+        print("Client search error:", e)
+
+    return jsonify(results)
+
+
 
 @app.route("/designer/analytics")
 @login_required
