@@ -1,0 +1,363 @@
+{% extends "layout.html" %}
+
+{% block title %}Project Timeline – DesignAI{% endblock %}
+
+{% block head %}
+<style>
+    /* ------------------------------------------------------------------- */
+    /* GLOBAL STYLES & COLOR SCHEME (Based on Green Primary/Layout Look) */
+    /* ------------------------------------------------------------------- */
+    .main-content {
+        max-width: 1200px; /* EXPANDED WIDTH */
+        width: 95%; /* Use a percentage width as a fallback/driver */
+        margin: 0 auto;
+        padding: 1rem 0;
+    }
+    .timeline-card {
+        background: #fff;
+        border-radius: 8px; /* Slightly less rounded than before, matching layout */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05); /* Softer shadow */
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid #e5e7eb; /* Light border for clean separation */
+    }
+    .timeline-input label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #374151;
+        font-size: 0.95rem;
+    }
+    .timeline-input input, .timeline-input select {
+        padding: 0.8rem 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 4px; /* Matches form fields in provided images */
+        width: 100%;
+        /* Adjusted for better vertical alignment and compactness */
+        margin-bottom: 1rem; 
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background-color: #ffffff;
+    }
+    .timeline-input input:focus, .timeline-input select:focus {
+        border-color: #10b981; /* Primary Green Focus */
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        outline: none;
+    }
+    .btn-primary {
+        background-color: #10b981; /* Primary Green */
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border-radius: 4px;
+        font-weight: 700;
+        transition: background-color 0.2s;
+        width: 100%;
+        border: none;
+    }
+    .btn-primary:hover:not(:disabled) {
+        background-color: #059669; /* Darker Green on Hover */
+    }
+    .btn-primary:disabled {
+        background-color: #9ca3af;
+        cursor: not-allowed;
+    }
+
+    /* ------------------------------------------------------------------- */
+    /* TIMELINE RESULTS DISPLAY */
+    /* ------------------------------------------------------------------- */
+    .timeline-container {
+        position: relative;
+        padding-left: 50px; 
+    }
+    .timeline-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 10px;
+        width: 3px;
+        background-color: #d1d5db; /* Light gray line */
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+        padding: 10px 15px;
+        border-radius: 6px;
+        background-color: #f0fdf4; /* Very light green background */
+        border: 1px solid #dcfce7;
+    }
+    .timeline-item::before {
+        display: none !important;
+        content: '';
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: #10b981; /* Primary Green Dot */
+        border: 3px solid #fff;
+        left: -3px;
+        top: 20px;
+        z-index: 10;
+        box-shadow: 0 0 0 2px #10b981;
+    }
+    .phase-name {
+        font-weight: 700;
+        color: #065f46; /* Darker green for phase title */
+        font-size: 1.1rem;
+    }
+    .phase-duration {
+        font-size: 0.9rem;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+    .phase-details {
+        font-size: 0.95rem;
+        color: #4b5563;
+    }
+    .total-summary {
+        text-align: center;
+        padding: 1.5rem;
+        background: #ecfdf5; /* Lightest green for summary block */
+        color: #065f46;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        border: 1px solid #a7f3d0;
+    }
+    #loadingIndicator {
+        display: none;
+        text-align: center;
+        color: #10b981;
+        font-weight: 600;
+        padding: 1rem;
+    }
+    .section-header {
+        /* Apply flexbox to align content side-by-side */
+        display: flex;
+        align-items: center; /* Vertically center items */
+        gap: 1.5rem; /* Space between title and subtitle */
+    }
+    .section-header h3 {
+        font-size: 1.5rem; /* Reduced size to match provided layout */
+        font-weight: 700;
+        color: #1f2937;
+        /* Prevent h3 from shrinking/growing */
+        flex-shrink: 0; 
+    }
+    .section-header p {
+        font-size: 0.95rem;
+        /* Allow p tag to take up remaining space */
+        flex-grow: 1; 
+        color: #6b7280; /* Neutral gray for subtitle */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="main-content">
+    <section style="margin-top:0;">
+        <!-- Updated section-header to use flex for horizontal alignment -->
+        <div class="section-header mb-6">
+            <p><h3>Project Timeline Scheduler</h3></p><br>
+            
+        </div>
+        <div>
+            <p>Enter your project details and preferences to calculate a realistic schedule.</p>
+        </div>
+
+        <div class="timeline-card">
+            <!-- INPUTS SECTION -->
+            <div class="timeline-input grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+                
+                <!-- 1. Mandatory Start Date -->
+                <div>
+                    <label for="startDate">1. Project Start Date</label>
+                    <input type="date" id="startDate" required>
+                </div>
+
+                <!-- 2. Home Area -->
+                <div>
+                    <label for="area">2. Home Area (Sq. Ft.)</label>
+                    <input type="number" id="area" placeholder="e.g., 2000" value="2000" required>
+                </div>
+
+                <!-- 3. Material Quality -->
+                <div>
+                    <label for="material">3. Material Quality</label>
+                    <select id="material" required>
+                        <option value="Basic">Basic (Lead time: ~6 weeks)</option>
+                        <option value="Premium" selected>Premium (Lead time: ~8 weeks)</option>
+                        <option value="Luxury">Luxury (Lead time: ~12 weeks)</option>
+                    </select>
+                </div>
+
+                <!-- 4. Home Type -->
+                <div>
+                    <label for="homeType">4. Home Type</label>
+                    <select id="homeType" required>
+                        <option value="2BHK" selected>2BHK Apartment</option>
+                        <option value="3BHK">3BHK Apartment</option>
+                        <option value="Villa">Villa/Independent House</option>
+                        <option value="Studio">Studio Apartment</option>
+                    </select>
+                </div>
+
+                <!-- 5. Design Style -->
+                <div>
+                    <label for="style">5. Design Style</label>
+                    <select id="style" required>
+                        <option value="Minimal" selected>Minimal</option>
+                        <option value="Industrial">Industrial</option>
+                        <option value="Classic">Classic</option>
+                        <option value="Modern">Modern</option>
+                    </select>
+                </div>
+
+                <!-- 6. Work Week Preference -->
+                <div>
+                    <label for="workWeek">6. Work Week Preference (Days/Week)</label>
+                    <select id="workWeek">
+                        <option value="5" selected>5 Days (Mon-Fri) - Standard</option>
+                        <option value="6">6 Days (Mon-Sat) - Faster</option>
+                        <option value="7">7 Days (Every Day) - Fastest</option>
+                    </select>
+                </div>
+
+                <!-- 7. Site Complexity -->
+                <div>
+                    <label for="siteComplexity">7. Site Complexity & Access</label>
+                    <select id="siteComplexity">
+                        <option value="Easy" selected>Easy (Ground floor/Simple access)</option>
+                        <option value="Standard">Standard (Minor challenges, adds +1 week)</option>
+                        <option value="Difficult">Difficult (High-rise/Tight access, adds +2 weeks)</option>
+                    </select>
+                </div>
+
+                <!-- 8. Client Decision Speed -->
+                <div>
+                    <label for="decisionSpeed">8. Client Decision-Making Speed</label>
+                    <select id="decisionSpeed">
+                        <option value="Fast">Fast (Approvals within 48h)</option>
+                        <option value="Standard" selected>Standard (Avg. approval time)</option>
+                        <option value="Slow">Slow (Potential delays, adds +1-2 weeks)</option>
+                    </select>
+                </div>
+            </div>
+            
+
+            <button id="generateTimelineBtn" class="btn-primary mt-4">Generate Detailed Timeline</button>
+
+            <div id="loadingIndicator">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-current inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing 4 Phases with AI Scheduler...
+            </div>
+
+            <!-- TIMELINE RESULTS DISPLAY -->
+            <div id="timelineResults" class="timeline-results" style="display:none;">
+                
+                <div class="total-summary">
+                    <p class="text-lg font-semibold">Estimated Project Completion: <strong id="completionDate" class="text-2xl ml-2"></strong></p>
+                    <p class="text-sm mt-1">Total Estimated Duration: <span id="totalDays"></span> days.</p>
+                </div>
+
+                <h4 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Project Phases Overview</h4>
+                
+                <div id="phasesContainer" class="timeline-container">
+                    <!-- Phases will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+document.getElementById('generateTimelineBtn').addEventListener('click', async function() {
+    // 1. Retrieve all user inputs
+    const startDate = document.getElementById('startDate').value;
+    const area = document.getElementById('area').value;
+    const material = document.getElementById('material').value;
+    const homeType = document.getElementById('homeType').value;
+    const style = document.getElementById('style').value;
+    
+    const workWeek = document.getElementById('workWeek').value;
+    const siteComplexity = document.getElementById('siteComplexity').value;
+    const decisionSpeed = document.getElementById('decisionSpeed').value;
+    
+    // 2. Simple Validation
+    if (!startDate || !area || !material || !homeType || !style) {
+        // Log error instead of using alert/confirm
+        console.error("Please fill out all required project details (Start Date, Area, Material, Home Type, Style).");
+        return;
+    }
+
+    const btn = this;
+    const resultsDiv = document.getElementById('timelineResults');
+    const phasesContainer = document.getElementById('phasesContainer');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    
+    btn.disabled = true;
+    loadingIndicator.style.display = 'block';
+    resultsDiv.style.display = 'none';
+
+    try {
+        
+        // 3. Combined data to send to the API
+        const requestData = {
+            start_date: startDate,
+            area: parseInt(area), 
+            material: material,
+            home_type: homeType,
+            style: style,
+            work_week: parseInt(workWeek), // Send as number
+            site_complexity: siteComplexity,
+            decision_speed: decisionSpeed,
+        };
+        
+        const response = await fetch('/api/timeline_generate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(requestData)
+        });
+
+        const data = await response.json();
+        if (!data.success) {
+            console.error("Failed to generate timeline:", data.error);
+            loadingIndicator.innerHTML = `Error: Failed to generate timeline. Details: ${data.error}`;
+            return;
+        }
+
+        const timeline = data.timeline;
+
+        // Update Summary
+        document.getElementById('completionDate').textContent = timeline.end_date;
+        document.getElementById('totalDays').textContent = timeline.total_project_days;
+        
+        // Populate Attractive Phases
+        phasesContainer.innerHTML = '';
+        timeline.phases.forEach(phase => {
+            phasesContainer.innerHTML += `
+                <div class="timeline-item">
+                    <div class="phase-name">${phase.name}</div>
+                    <div class="phase-duration">Duration: ${phase.duration_weeks} Weeks</div>
+                    <div class="phase-details">
+                        <span class="font-semibold text-gray-700">Dates:</span> ${phase.start_date} &rarr; ${phase.end_date}<br>
+                        <span class="font-semibold text-gray-700">Details:</span> ${phase.details}
+                    </div>
+                </div>
+            `;
+        });
+        
+        resultsDiv.style.display = 'block';
+
+    } catch (err) {
+        console.error("Fetch Error:", err);
+        loadingIndicator.innerHTML = "An unknown network error occurred. See console for details.";
+    } finally {
+        btn.disabled = false;
+        loadingIndicator.style.display = 'none';
+        btn.textContent = "Generate Detailed Timeline";
+    }
+});
+</script>
+{% endblock %}
