@@ -460,92 +460,164 @@ def dashboard():
 
 
     
+# @app.route("/user_dashboard")
+# @login_required
+# def user_dashboard():
+    
+#     user = session["user"]
+
+#     # Security Check: If a 'designer' lands here, send them to their correct dashboard.
+#     if user["role"] != "user":
+#         flash("Access denied. Redirecting to your dashboard.", "warning")
+#         return redirect(url_for("dashboard"))
+    
+#     # --- From here, it's ONLY homeowner logic ---
+#     email = user["email"].strip().lower()
+
+#     try:
+#         print("\n===== DASHBOARD DEBUG INFO (HOMEOWNER) =====")
+#         print(f"Logged-in user email: {email}")
+#         print("======================================")
+
+#         # Fetch homeowner record
+#         user_res = (
+#             supabase.table("user_profiles")
+#             .select("*")
+#             .filter("email", "eq", email)
+#             .limit(1)
+#             .execute()
+#         )
+#         homeowner = user_res.data[0] if user_res.data else None
+#         if not homeowner:
+#             flash("Homeowner profile not found.", "danger")
+#             print(f"No user_profile found for: {email}")
+#             return redirect(url_for("index"))
+
+#         print(f"Homeowner found: {homeowner.get('user_name', 'Unknown')}")
+
+#         # --- Placeholder Data (based on your images) ---
+#         # In a real app, you'd fetch this from Supabase, e.g.:
+#         # recent_uploads_res = supabase.table("user_projects").select("*").eq("user_id", homeowner['id']).limit(3).execute()
+#         # recent_uploads = recent_uploads_res.data or []
+#         recent_uploads = [
+#             {"name": "Living Room", "img_url": "https://placehold.co/150x150/eeeeee/cccccc?text=Living+Room"},
+#             {"name": "Bedroom", "img_url": "https://placehold.co/150x150/eeeeee/cccccc?text=Bedroom"},
+#             {"name": "Kitchen", "img_url": "https://placehold.co/150x150/eeeeee/cccccc?text=Kitchen"},
+#         ]
+
+#         # Example: Fetch AI results
+#         ai_results = [
+#             {"style": "Modern Minimalist", "match": "92%", "before_img": "https://placehold.co/300x200/ccc/fff?text=Before", "after_img": "https://placehold.co/300x200/888/fff?text=After"},
+#             {"style": "Cozy Scandinavian", "match": "88%", "before_img": "https://placehold.co/300x200/ccc/fff?text=Before", "after_img": "https://placehold.co/300x200/888/fff?text=After"},
+#             {"style": "Industrial Chic", "match": "85%", "before_img": "https://placehold.co/300x200/ccc/fff?text=Before", "after_img": "https://placehold.co/300x200/888/fff?text=After"},
+#         ]
+
+#         # Example: Fetch smart predictions
+#         smart_predictions = {
+#             "budget": "₹25K - ₹45K",
+#             "timeline": "3-5 weeks",
+#             "style_match": "92%",
+#             "trending": "Modern Minimalist"
+#         }
+
+#         # Example: Fetch recommended designers
+#         # designers_res = supabase.table("designers").select("*").limit(3).execute()
+#         # recommended_designers = designers_res.data or []
+#         recommended_designers = [
+#             {"initials": "PS", "name": "Priya Sharma", "style": "Modern & Contemporary", "rating": 4.9, "reviews": 127, "location": "Mumbai", "budget": "₹15K - ₹50K"},
+#             {"initials": "AP", "name": "Arjun Patel", "style": "Scandinavian & Minimalist", "rating": 4.8, "reviews": 89, "location": "Bangalore", "budget": "₹20K - ₹60K"},
+#             {"initials": "KR", "name": "Kavya Reddy", "style": "Traditional & Fusion", "rating": 4.9, "reviews": 156, "location": "Hyderabad", "budget": "₹18K - ₹45K", "available": True},
+#         ]
+
+#         # ---------- RENDER HOMEOWNER DASHBOARD ----------
+#         return render_template(
+#             "dashboard_homeowner.html",
+#             user=user,
+#             homeowner=homeowner,
+#             recent_uploads=recent_uploads,
+#             ai_results=ai_results,
+#             smart_predictions=smart_predictions,
+#             recommended_designers=recommended_designers
+#         )
+
+#     except Exception as e:
+#         print("HOMEOWNER DASHBOARD ERROR TRACEBACK:", e)
+#         flash(f"Error loading homeowner dashboard data: {e}", "danger")
+#         return redirect(url_for("index"))
+# # --- END NEW ROUTE ---
+
 @app.route("/user_dashboard")
 @login_required
 def user_dashboard():
-    
     user = session["user"]
-
-    # Security Check: If a 'designer' lands here, send them to their correct dashboard.
     if user["role"] != "user":
-        flash("Access denied. Redirecting to your dashboard.", "warning")
         return redirect(url_for("dashboard"))
     
-    # --- From here, it's ONLY homeowner logic ---
     email = user["email"].strip().lower()
 
-    try:
-        print("\n===== DASHBOARD DEBUG INFO (HOMEOWNER) =====")
-        print(f"Logged-in user email: {email}")
-        print("======================================")
+    # 1. Fetch Homeowner Profile
+    user_res = supabase.table("user_profiles").select("*").filter("email", "eq", email).limit(1).execute()
+    homeowner = user_res.data[0] if user_res.data else {}
 
-        # Fetch homeowner record
-        user_res = (
-            supabase.table("user_profiles")
-            .select("*")
-            .filter("email", "eq", email)
-            .limit(1)
-            .execute()
-        )
-        homeowner = user_res.data[0] if user_res.data else None
-        if not homeowner:
-            flash("Homeowner profile not found.", "danger")
-            print(f"No user_profile found for: {email}")
-            return redirect(url_for("index"))
+    # 2. Fetch Designers
+    designers_res = supabase.table("designers").select("*").limit(50).execute()
+    all_designers = designers_res.data or []
 
-        print(f"Homeowner found: {homeowner.get('user_name', 'Unknown')}")
+    # 3. Recommendation Logic
+    my_city = homeowner.get('user_city', '').strip()
+    recommended_designers = []
 
-        # --- Placeholder Data (based on your images) ---
-        # In a real app, you'd fetch this from Supabase, e.g.:
-        # recent_uploads_res = supabase.table("user_projects").select("*").eq("user_id", homeowner['id']).limit(3).execute()
-        # recent_uploads = recent_uploads_res.data or []
-        recent_uploads = [
-            {"name": "Living Room", "img_url": "https://placehold.co/150x150/eeeeee/cccccc?text=Living+Room"},
-            {"name": "Bedroom", "img_url": "https://placehold.co/150x150/eeeeee/cccccc?text=Bedroom"},
-            {"name": "Kitchen", "img_url": "https://placehold.co/150x150/eeeeee/cccccc?text=Kitchen"},
-        ]
+    for d in all_designers:
+        # Score Logic: 50 points if city matches
+        score = 50 if (d.get('location') == my_city) else 0
+        
+        # Initials generator
+        name = d.get('designer_name', 'Designer')
+        # Handle cases where name might be empty
+        parts = name.split()
+        if len(parts) >= 2:
+            initials = (parts[0][0] + parts[1][0]).upper()
+        elif parts:
+            initials = parts[0][:2].upper()
+        else:
+            initials = "D"
 
-        # Example: Fetch AI results
-        ai_results = [
-            {"style": "Modern Minimalist", "match": "92%", "before_img": "https://placehold.co/300x200/ccc/fff?text=Before", "after_img": "https://placehold.co/300x200/888/fff?text=After"},
-            {"style": "Cozy Scandinavian", "match": "88%", "before_img": "https://placehold.co/300x200/ccc/fff?text=Before", "after_img": "https://placehold.co/300x200/888/fff?text=After"},
-            {"style": "Industrial Chic", "match": "85%", "before_img": "https://placehold.co/300x200/ccc/fff?text=Before", "after_img": "https://placehold.co/300x200/888/fff?text=After"},
-        ]
+        # --- THE FIX FOR TYPE ERROR IS HERE ---
+        # We use (d.get(...) or 0) to force None to become 0
+        budget_min = d.get('budget_range_min') or 0
+        budget_display = f"₹{budget_min // 1000}k+"
 
-        # Example: Fetch smart predictions
-        smart_predictions = {
-            "budget": "₹25K - ₹45K",
-            "timeline": "3-5 weeks",
-            "style_match": "92%",
-            "trending": "Modern Minimalist"
-        }
+        recommended_designers.append({
+            "id": d['id'],
+            "initials": initials,
+            "name": name,
+            "style": d.get('design_styles', ['General'])[0] if d.get('design_styles') else "General",
+            "rating": d.get('rating') or 5.0,
+            "reviews": d.get('total_reviews') or 0,
+            "location": d.get('location') or 'Remote',
+            "budget": budget_display,
+            "score": score,
+            "available": True 
+        })
 
-        # Example: Fetch recommended designers
-        # designers_res = supabase.table("designers").select("*").limit(3).execute()
-        # recommended_designers = designers_res.data or []
-        recommended_designers = [
-            {"initials": "PS", "name": "Priya Sharma", "style": "Modern & Contemporary", "rating": 4.9, "reviews": 127, "location": "Mumbai", "budget": "₹15K - ₹50K"},
-            {"initials": "AP", "name": "Arjun Patel", "style": "Scandinavian & Minimalist", "rating": 4.8, "reviews": 89, "location": "Bangalore", "budget": "₹20K - ₹60K"},
-            {"initials": "KR", "name": "Kavya Reddy", "style": "Traditional & Fusion", "rating": 4.9, "reviews": 156, "location": "Hyderabad", "budget": "₹18K - ₹45K", "available": True},
-        ]
+    # Sort by score (highest match first)
+    recommended_designers.sort(key=lambda x: x['score'], reverse=True)
+    recommended_designers = recommended_designers[:3] # Show top 3
 
-        # ---------- RENDER HOMEOWNER DASHBOARD ----------
-        return render_template(
-            "dashboard_homeowner.html",
-            user=user,
-            homeowner=homeowner,
-            recent_uploads=recent_uploads,
-            ai_results=ai_results,
-            smart_predictions=smart_predictions,
-            recommended_designers=recommended_designers
-        )
+    # Placeholder data for other sections
+    recent_uploads = [] 
+    ai_results = []
+    smart_predictions = {"budget": "Calculating...", "timeline": "TBD", "style_match": "--", "trending": "--"}
 
-    except Exception as e:
-        print("HOMEOWNER DASHBOARD ERROR TRACEBACK:", e)
-        flash(f"Error loading homeowner dashboard data: {e}", "danger")
-        return redirect(url_for("index"))
-# --- END NEW ROUTE ---
-
+    return render_template(
+        "dashboard_homeowner.html",
+        user=user,
+        homeowner=homeowner,
+        recent_uploads=recent_uploads,
+        ai_results=ai_results,
+        smart_predictions=smart_predictions,
+        recommended_designers=recommended_designers
+    )
 
 @app.route("/logout")
 def logout():

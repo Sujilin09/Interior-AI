@@ -19,46 +19,37 @@
             </div>
         </section>
 
-        <section class="recent-uploads">
-            <h3>Recent Uploads</h3>
-            <div class="uploads-grid">
-                {% for upload in recent_uploads %}
-                <div class="upload-card">
-                    <img src="{{ upload.img_url }}" alt="{{ upload.name }}">
-                    <p>{{ upload.name }}</p>
+        <section class="trending-styles" style="margin-top: 2rem;">
+            <div class="section-header">
+                <h3>Explore Trending Styles</h3>
+                <span style="font-size: 0.9rem; color: #666;">Popular this week</span>
+            </div>
+            <div class="uploads-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                <div class="upload-card card" style="padding: 0; overflow: hidden; border-radius: 12px; transition: transform 0.2s;">
+                    <img src="https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=500&auto=format&fit=crop&q=60" alt="Modern Minimalist" style="width: 100%; height: 150px; object-fit: cover;">
+                    <div style="padding: 1rem;">
+                        <p style="font-weight: 600; margin-bottom: 4px;">Modern Minimalist</p>
+                        <small style="color: #888;">Clean lines & calm</small>
+                    </div>
                 </div>
-                {% else %}
-                <p class="empty-placeholder">You haven't uploaded any photos yet.</p>
-                {% endfor %}
+                <div class="upload-card card" style="padding: 0; overflow: hidden; border-radius: 12px; transition: transform 0.2s;">
+                    <img src="https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=500&auto=format&fit=crop&q=60" alt="Bohemian Chic" style="width: 100%; height: 150px; object-fit: cover;">
+                    <div style="padding: 1rem;">
+                        <p style="font-weight: 600; margin-bottom: 4px;">Bohemian Chic</p>
+                        <small style="color: #888;">Eclectic & artistic</small>
+                    </div>
+                </div>
+                <div class="upload-card card" style="padding: 0; overflow: hidden; border-radius: 12px; transition: transform 0.2s;">
+                    <img src="https://images.unsplash.com/photo-1616486338812-3dadae4b4f9d?w=500&auto=format&fit=crop&q=60" alt="Industrial Loft" style="width: 100%; height: 150px; object-fit: cover;">
+                    <div style="padding: 1rem;">
+                        <p style="font-weight: 600; margin-bottom: 4px;">Industrial Loft</p>
+                        <small style="color: #888;">Raw & edgy</small>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <section class="ai-results">
-            <div class="section-header">
-                <h3>AI Design Results</h3>
-                <a href="#" class="view-all">View All Results <i class='bx bx-chevron-right'></i></a>
-            </div>
-            <div class="results-grid">
-                {% for result in ai_results %}
-                <div class="result-card card">
-                    <div class="result-image">
-                        <img src="{{ result.after_img }}" alt="{{ result.style }} After">
-                        <div class="before-after-toggle">
-                            <button class="toggle-btn active">After</button>
-                            <button class="toggle-btn">Before</button>
-                        </div>
-                    </div>
-                    <div class="result-info">
-                        <h4>{{ result.style }}</h4>
-                        <span class="match-score">{{ result.match }} match</span>
-                    </div>
-                    <button class="btn-secondary full-width">View Details</button>
-                </div>
-                {% else %}
-                <p class="empty-placeholder">Upload a photo to see your AI design results here.</p>
-                {% endfor %}
-            </div>
-        </section>
+       
 
         <section class="smart-predictions">
             <h3>Smart Predictions</h3>
@@ -119,7 +110,10 @@
                         <p><i class='bx bx-map'></i> {{ designer.location }}</p>
                         <p><i class='bx bx-rupee'></i> {{ designer.budget }}</p>
                     </div>
-                    <button class="btn-secondary full-width">View Portfolio</button>
+                    
+                    <a href="{{ url_for('view_designer', designer_id=designer.id) }}" class="btn-secondary full-width" style="text-decoration:none; display:block; text-align:center; margin-top:10px;">
+                        View Portfolio
+                    </a>
                     
                     {% if designer.available %}
                     <div class="designer-availability">
@@ -128,10 +122,10 @@
                     {% endif %}
                 </div>
                 {% else %}
-                <p classs="empty-placeholder">No designers match your criteria right now.</p>
+                <p class="empty-placeholder" style="grid-column: 1 / -1;">No designers match your criteria right now.</p>
                 {% endfor %}
             </div>
-            <p class="recommendation-footer">Because you liked Modern Minimalist...</p>
+            <p class="recommendation-footer">Based on your Location & Style preferences...</p>
         </section>
 
     </main>
